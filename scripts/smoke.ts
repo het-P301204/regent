@@ -105,7 +105,8 @@ await check('security report PDF', async () => {
   assert(r.ok && buf.subarray(0, 5).toString() === '%PDF-', 'not a PDF')
   return `${Math.round(buf.length / 1024)} KB`
 })
-await check('console served', async () => {
+// REGENT_SMOKE_API_ONLY=true when the API runs without a web build (e.g. the CI PostgreSQL job).
+if (process.env['REGENT_SMOKE_API_ONLY'] !== 'true') await check('console served', async () => {
   const r = await fetch(`${base}/app`)
   const html = await r.text()
   assert(r.ok && html.includes('REGENT'), `status ${r.status}`)
