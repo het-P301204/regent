@@ -87,7 +87,7 @@ The stack (configured, not yet run):
 
 - `postgres` — `postgres:17.6-alpine`, data in the `pgdata` volume, health-checked with `pg_isready`, attached only to an internal network with no published port.
 - `api` — built from the `Dockerfile`, `DATABASE_URL` pointing at `postgres`, starts after PostgreSQL is healthy, published on `127.0.0.1:8787` only. For local use the stack sets `REGENT_DEMO_MODE=true` and `REGENT_COOKIE_SECURE=false` (plain HTTP), and by default allowlists only the 8787 origins (`http://127.0.0.1:8787`, `http://localhost:8787`); all can be overridden from `.env`. Set `REGENT_DEMO_MODE=false` before loading real data; existing demo sessions and tokens stop working at once.
-- `web` (profile `dev`) — `node:24.18-alpine3.22` running Vite against the API.
+- `web` (profile `dev`) — `node:24.19-alpine3.24` running Vite against the API.
 
 ## Container hardening
 
@@ -95,7 +95,7 @@ The `Dockerfile` (configured, not yet built):
 
 - Multi-stage: a build stage installs all dependencies and builds the console; the runtime stage installs production dependencies only (`npm ci --omit=dev`) and copies the engine, API and CLI sources, migrations, scenarios and the built console.
 - `.dockerignore` keeps `.git`, `.github`, `.env` files (except `.env.example`), local databases (`.data`), CLI state (`.regent`), `node_modules`, build output, test reports, logs and screenshots out of the build context.
-- Base image `node:24.18-alpine3.22` (override with the `NODE_IMAGE` build argument; pin it by digest in your registry mirror).
+- Base image `node:24.19-alpine3.24` (override with the `NODE_IMAGE` build argument; pin it by digest in your registry mirror).
 - Runs as the unprivileged `node` user. `/data` is created and owned by `node` for an optional PGlite directory.
 - No server compile step: Node 24 runs the TypeScript sources.
 - `HEALTHCHECK` calls `GET /api/health` every 15 seconds.

@@ -4,7 +4,7 @@
 # Node 24 runs the TypeScript sources directly (type stripping), so there is no
 # server compile step. Pin the base image by digest in your registry mirror.
 
-ARG NODE_IMAGE=node:24.18-alpine3.22
+ARG NODE_IMAGE=node:24.19-alpine3.24
 
 # ---- build: install everything, build the web console ----------------------
 FROM ${NODE_IMAGE} AS build

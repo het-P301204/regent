@@ -54,7 +54,7 @@ services:
 
   web:
     profiles: [dev]
-    image: node:24.18-alpine3.22
+    image: node:24.19-alpine3.24
     working_dir: /app/apps/web
     command: ["sh", "-c", "cd /app && npm ci --no-audit --no-fund && cd apps/web && npx vite"]
     environment:
