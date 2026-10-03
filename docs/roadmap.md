@@ -46,4 +46,4 @@ Residual items from the internal security review (see [security-model.md](securi
 
 ## Operations
 
-- **First deployment.** Build the image, run the Compose stack and the CI `postgres`, `e2e` and `container` jobs, deploy, and record the smoke test result. See [deployment.md](deployment.md#status).
+- **First deployment.** Deploy the CI-verified image to a container host with a managed PostgreSQL, run `scripts/smoke.ts` against it, and record the result. See [deployment.md](deployment.md#status).

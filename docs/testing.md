@@ -110,19 +110,26 @@ The figures are single runs on one machine and vary with hardware; use them to c
 
 `apps/api/test/performance.test.ts` is the corresponding regression test for the API views (above).
 
-## Not yet run
+## Continuous integration
 
-The following are configured in the repository but have not been executed, because Docker and a PostgreSQL server were not available on the build machine and the CI workflows have not run yet:
+Every push to `main` runs these in GitHub Actions ([runs](https://github.com/het-P301204/regent/actions/workflows/ci.yml)); all pass:
 
-| What | Where | Status |
-|---|---|---|
-| API against a real PostgreSQL server (migrations via `npm run db:migrate`, API boot, `database_engine: postgres` check, smoke test) | `.github/workflows/ci.yml`, job `postgres` | Configured, not yet run. The API suite runs against PGlite; the production driver has been exercised only over the wire protocol against PGlite. |
-| Container build, health check, SBOM and Trivy scan | `.github/workflows/ci.yml`, job `container` | Configured, not yet run. |
-| End-to-end tests in CI | `.github/workflows/ci.yml`, job `e2e` | Configured, not yet run in CI (the suite passes locally, above). |
-| Docker Compose stack | `docker-compose.yml` | Configured, not yet run. |
-| Dependency audit, secret scanning, CodeQL | `ci.yml` jobs `dependency-audit` and `secrets`, `codeql.yml` | Configured, not yet run. |
+| Job | What it runs |
+|---|---|
+| `verify` | lint, typecheck, `npm test`, production build, CLI smoke on the demo dataset |
+| `postgres` | `npm run db:migrate` against a real PostgreSQL 17 service, API boot (`database_engine: postgres`), `scripts/smoke.ts` API checks |
+| `e2e` | Playwright against the production build |
+| `container` | image build, `/api/health` check of the running container, SPDX SBOM, Trivy (fixable HIGH/CRITICAL fail the job) |
+| `dependency-audit` | `npm audit --omit=dev --audit-level=high`, lockfile integrity |
+| `secrets` | gitleaks over the full history (`.gitleaks.toml` allowlists only the synthetic `svid-*` credential identifiers) |
+| `codeql` | CodeQL `security-extended` static analysis |
 
-PGlite is PostgreSQL compiled to WebAssembly and runs the same migration SQL, which makes divergence unlikely but not impossible (for example connection pooling, transaction behaviour under concurrency, and `statement_timeout` exist only on the server path). The wire-protocol test narrows that gap for the driver code, but treat behaviour against a PostgreSQL server as untested until the `postgres` job has passed.
+The first CI runs found real problems that local testing could not: an image tag that did not exist, a Trivy action version that did not exist, gitleaks' first-push diff range, and HIGH CVEs in the npm bundled with the base image (removed from the runtime stage). Each was fixed in its own commit.
+
+Not run: the Docker Compose stack as a whole, and the release workflow.
+
+
+PGlite is PostgreSQL compiled to WebAssembly and runs the same migration SQL, which makes divergence unlikely but not impossible (for example connection pooling, transaction behaviour under concurrency, and `statement_timeout` exist only on the server path). The wire-protocol test narrows that gap for the driver code, and the CI `postgres` job runs migrations and the API smoke checks against a real PostgreSQL 17 server.
 
 ## Smoke test
 

@@ -12,6 +12,7 @@ REGENT reconstructs the authority chain behind AI-agent actions<br/>and verifies
 
 ![Node 24](https://img.shields.io/badge/node-24.x-1c1b19?style=flat-square&labelColor=0d0d0c)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-1c1b19?style=flat-square&labelColor=0d0d0c)
+[![CI](https://github.com/het-P301204/regent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/het-P301204/regent/actions/workflows/ci.yml)
 ![Tests](https://img.shields.io/badge/tests-154%20unit%20%2B%2018%20e2e-7b8b72?style=flat-square&labelColor=0d0d0c)
 ![License](https://img.shields.io/badge/license-Apache--2.0-c47a44?style=flat-square&labelColor=0d0d0c)
 
@@ -270,7 +271,7 @@ node scripts/bench.ts # engine timings on hostile-but-valid input sizes
 
 Measured on a laptop (`node scripts/bench.ts`): 15,000 actions sharing the same findings verify in **~0.9 s**; ~50,000 records in **~4 s**; 8,000 actions on a 31-hop chain with 256-entry wildcard scopes in **~4.7 s**.
 
-**Honest status.** The Docker image, the Compose stack and the GitHub Actions jobs are configured but have not been run on the machine this was built on (no Docker available there), and the API has not yet run against a standalone PostgreSQL server. The post-deployment smoke test (`scripts/smoke.ts`) passes against a local production-mode server. No deployment is claimed. See [deployment.md](docs/deployment.md#status).
+**Status.** Every push runs the full pipeline in [GitHub Actions](https://github.com/het-P301204/regent/actions/workflows/ci.yml): lint, typecheck, tests, build, Playwright end-to-end, migrations and API smoke checks against a real PostgreSQL 17 server, the container image build with a health check, SBOM and Trivy scan, dependency audit, gitleaks over the full history, and CodeQL — all passing. The Compose stack as a whole and the release workflow have not been run, and no hosted deployment is claimed. See [deployment.md](docs/deployment.md#status).
 
 ## Documentation
 

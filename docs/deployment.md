@@ -11,12 +11,19 @@ What has been run:
 - the API in production mode (`node apps/api/src/index.ts --production`, serving the built console, with an in-memory PGlite database), against which `scripts/smoke.ts` passed all nine checks and the Playwright end-to-end suite passed (see [testing.md](testing.md));
 - the production `node-postgres` driver, tested over the PostgreSQL wire protocol against PGlite served on a local socket (`apps/api/test/postgres-driver.test.ts`).
 
+Verified in GitHub Actions ([ci.yml runs](https://github.com/het-P301204/regent/actions/workflows/ci.yml)), all passing on `main`:
+
+- `verify` — lint, typecheck, unit and integration tests, production build, CLI smoke;
+- `postgres` — migrations applied to a real PostgreSQL 17 server (`postgres:17.6-alpine` service), the API booted against it (`database_engine: postgres`), and `scripts/smoke.ts` passed its API checks;
+- `e2e` — the Playwright suite against the production build;
+- `container` — the image built from the `Dockerfile`, started, passed its `/api/health` check, an SPDX SBOM was generated, and Trivy reported no fixable HIGH or CRITICAL vulnerabilities;
+- `dependency-audit` (`npm audit --omit=dev --audit-level=high`), `secrets` (gitleaks over the full history), and CodeQL static analysis.
+
 What has not been run:
 
-- the Docker image has not been built;
-- the Docker Compose stack has not been started;
-- nothing has run against a real PostgreSQL server;
-- the CI jobs (`verify`, `postgres`, `e2e`, `container`, `dependency-audit`, `secrets`, CodeQL) have not run.
+- the Docker Compose stack as a whole (its two services are exercised separately above);
+- the release workflow (no tag has been pushed);
+- any deployment to a hosting platform. No deployment URL exists.
 
 What remains before a first deployment:
 
@@ -83,7 +90,7 @@ REGENT_ALLOWED_ORIGINS=http://127.0.0.1:8787,http://localhost:8787,http://127.0.
   docker compose --profile dev up --build
 ```
 
-The stack (configured, not yet run):
+The stack (not yet run as a whole; the image and PostgreSQL are each exercised in CI):
 
 - `postgres` — `postgres:17.6-alpine`, data in the `pgdata` volume, health-checked with `pg_isready`, attached only to an internal network with no published port.
 - `api` — built from the `Dockerfile`, `DATABASE_URL` pointing at `postgres`, starts after PostgreSQL is healthy, published on `127.0.0.1:8787` only. For local use the stack sets `REGENT_DEMO_MODE=true` and `REGENT_COOKIE_SECURE=false` (plain HTTP), and by default allowlists only the 8787 origins (`http://127.0.0.1:8787`, `http://localhost:8787`); all can be overridden from `.env`. Set `REGENT_DEMO_MODE=false` before loading real data; existing demo sessions and tokens stop working at once.
@@ -91,7 +98,7 @@ The stack (configured, not yet run):
 
 ## Container hardening
 
-The `Dockerfile` (configured, not yet built):
+The `Dockerfile` (built, health-checked and scanned in CI):
 
 - Multi-stage: a build stage installs all dependencies and builds the console; the runtime stage installs production dependencies only (`npm ci --omit=dev`) and copies the engine, API and CLI sources, migrations, scenarios and the built console.
 - `.dockerignore` keeps `.git`, `.github`, `.env` files (except `.env.example`), local databases (`.data`), CLI state (`.regent`), `node_modules`, build output, test reports, logs and screenshots out of the build context.

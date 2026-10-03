@@ -75,7 +75,7 @@ The API speaks to PostgreSQL through one small interface (`Db` in `db/driver.ts`
 - **PGlite**: real PostgreSQL compiled to WebAssembly, running in-process. Used for local development (data in `.data/pglite` at the repository root, shared by every entry point) and for the API tests (in memory, `REGENT_DB=memory`). Nothing needs Docker or a database server to run.
 - **node-postgres**: a PostgreSQL server reached through `DATABASE_URL`. Used in production and in the Docker Compose stack.
 
-Both run the same SQL files from `database/migrations/`, and all SQL is parameterized. Each migration's SHA-256 is recorded in `schema_migrations`; an edited, already-applied migration stops startup rather than silently diverging. PGlite is single-process and in-process, so it is not a production database for REGENT; the PostgreSQL path is the production path. The production driver is tested by connecting `node-postgres` over the wire protocol to PGlite served on a local socket; the CI job that runs migrations and the smoke test against a PostgreSQL server is configured but has not been run yet (see [testing.md](testing.md)).
+Both run the same SQL files from `database/migrations/`, and all SQL is parameterized. Each migration's SHA-256 is recorded in `schema_migrations`; an edited, already-applied migration stops startup rather than silently diverging. PGlite is single-process and in-process, so it is not a production database for REGENT; the PostgreSQL path is the production path. The production driver is tested by connecting `node-postgres` over the wire protocol to PGlite served on a local socket; the CI `postgres` job runs migrations and the API smoke checks against a real PostgreSQL 17 server (see [testing.md](testing.md)).
 
 ## Determinism
 

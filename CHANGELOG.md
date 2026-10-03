@@ -36,7 +36,7 @@ Initial release.
 
 ### Infrastructure
 
-- Dockerfile, `.dockerignore`, Docker Compose stack, CI, CodeQL and release workflows, Dependabot, smoke test, engine benchmark (`scripts/bench.ts`). The Docker image, Compose stack and CI jobs are configured but not yet run (see `docs/deployment.md`); the smoke test has passed against a local production-mode server.
+- Dockerfile, `.dockerignore`, Docker Compose stack, CI, CodeQL and release workflows, Dependabot, smoke test, engine benchmark (`scripts/bench.ts`). All CI jobs pass on GitHub Actions, including the image build, health check, SBOM and Trivy scan, and migrations plus API smoke checks against a real PostgreSQL 17 server. The Compose stack as a whole and the release workflow have not been run (see `docs/deployment.md`).
 
 ### Security review
 
