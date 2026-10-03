@@ -136,7 +136,7 @@ export default function Landing() {
             {[
               ['Ingest', 'JSON or JSONL from your agent platform, treated as untrusted evidence. Bad records are rejected with a reason; legacy field names are rewritten.'],
               ['Reconstruct', 'Each action is walked back through recorded parent delegations to a root principal. A link that cannot be followed breaks the chain; nothing is guessed.'],
-              ['Verify', 'Ten invariants: containment, contraction, attribution, identity binding, action-time validity, policy traceability, approval. Unknown is never PASS.'],
+              ['Verify', 'Ten configurable rules over seven invariants: containment, contraction, attribution, identity binding, action-time validity, policy traceability, approval. Unknown is never PASS.'],
               ['Explain', 'Findings name the first broken edge, the authority that appeared from nowhere, and the evidence records behind every claim.'],
             ].map(([t, b], i) => (
               <li key={t} className="bg-s1 p-6">

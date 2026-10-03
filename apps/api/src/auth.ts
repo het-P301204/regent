@@ -52,31 +52,48 @@ export async function destroySession(db: Db, token: string): Promise<void> {
 
 type UserRow = { id: string; organization_id: string; email: string; display_name: string; role: Role; is_demo_persona: boolean; active_dataset_id: string | null }
 
-export async function resolveSession(db: Db, token: string): Promise<Principal | null> {
+/**
+ * Demo personas are password-less. When demo mode is off they must not keep
+ * working through a session or token minted while it was on.
+ */
+export async function resolveSession(db: Db, token: string, demoMode: boolean): Promise<Principal | null> {
   const rows = await db.query<UserRow & { csrf_token: string }>(
     `SELECT u.id, u.organization_id, u.email, u.display_name, u.role, u.is_demo_persona, u.active_dataset_id, s.csrf_token
        FROM sessions s JOIN users u ON u.id = s.user_id AND u.organization_id = s.organization_id
       WHERE s.token_hash = $1 AND s.expires_at > now()`, [tokenHash(token)])
   const u = rows[0]
   if (!u) return null
+  if (u.is_demo_persona && !demoMode) return null
   await db.query('UPDATE sessions SET last_seen_at = now() WHERE token_hash = $1', [tokenHash(token)])
   return { user_id: u.id, organization_id: u.organization_id, email: u.email, display_name: u.display_name, role: u.role, is_demo_persona: u.is_demo_persona, active_dataset_id: u.active_dataset_id, via: 'session', csrf_token: u.csrf_token }
 }
 
-export async function resolveApiToken(db: Db, token: string): Promise<Principal | null> {
+export async function resolveApiToken(db: Db, token: string, demoMode: boolean): Promise<Principal | null> {
   const rows = await db.query<UserRow>(
     `SELECT u.id, u.organization_id, u.email, u.display_name, u.role, u.is_demo_persona, u.active_dataset_id
        FROM api_tokens t JOIN users u ON u.id = t.user_id AND u.organization_id = t.organization_id
-      WHERE t.token_hash = $1 AND t.revoked_at IS NULL`, [tokenHash(token)])
+      WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()`, [tokenHash(token)])
   const u = rows[0]
   if (!u) return null
+  if (u.is_demo_persona && !demoMode) return null
   await db.query('UPDATE api_tokens SET last_used_at = now() WHERE token_hash = $1', [tokenHash(token)])
   return { user_id: u.id, organization_id: u.organization_id, email: u.email, display_name: u.display_name, role: u.role, is_demo_persona: u.is_demo_persona, active_dataset_id: u.active_dataset_id, via: 'token', csrf_token: null }
 }
 
-export async function createApiToken(db: Db, user: Principal, name: string): Promise<{ token: string; prefix: string }> {
+export async function createApiToken(db: Db, user: Principal, name: string, days: number): Promise<{ token: string; prefix: string; expires_at: string }> {
   const token = `rgt_${newToken()}`
-  const prefix = token.slice(0, 10)
-  await db.query('INSERT INTO api_tokens (token_hash, token_prefix, user_id, organization_id, name) VALUES ($1, $2, $3, $4, $5)', [tokenHash(token), prefix, user.user_id, user.organization_id, name])
-  return { token, prefix }
+  // 16 characters of the random part identify a token in lists without revealing it.
+  const prefix = token.slice(0, 20)
+  const expires = new Date(Date.now() + days * 86_400_000).toISOString()
+  await db.query('INSERT INTO api_tokens (token_hash, token_prefix, user_id, organization_id, name, expires_at) VALUES ($1, $2, $3, $4, $5, $6)', [tokenHash(token), prefix, user.user_id, user.organization_id, name, expires])
+  return { token, prefix, expires_at: expires }
+}
+
+/** Remove expired sessions; demo sessions and tokens too when demo mode is off. */
+export async function purgeCredentials(db: Db, demoMode: boolean): Promise<void> {
+  await db.query('DELETE FROM sessions WHERE expires_at <= now()')
+  if (!demoMode) {
+    await db.query('DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE is_demo_persona)')
+    await db.query('UPDATE api_tokens SET revoked_at = now() WHERE revoked_at IS NULL AND user_id IN (SELECT id FROM users WHERE is_demo_persona)')
+  }
 }

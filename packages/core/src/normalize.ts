@@ -2,6 +2,7 @@ import { BundleKeys, ID_PATTERN, MAX_PARAMETERS_BYTES, MAX_RECORDS, RecordInput 
 import type { RecordInputT } from './schemas.ts'
 import { canonical, compareStrings, invalidPermissions } from './scope.ts'
 import { canonicalJson } from './digest.ts'
+import { sanitizeDeep } from './text.ts'
 import type {
   Action,
   AuthorizationPolicy,
@@ -34,6 +35,7 @@ export interface IngestIssue {
     | 'ALIAS_APPLIED'
     | 'UNKNOWN_REVOCATION_TARGET'
     | 'TIMESTAMP_ORDER'
+    | 'TEXT_SANITIZED'
   message: string
   record_index: number | null
   record_type: string | null
@@ -137,7 +139,11 @@ export function normalizeRecords(rawRecords: unknown[]): NormalizeResult {
   const revocations: { target_type: string; target_id: string; timestamp: string; index: number }[] = []
   const seenCanonical = new Map<string, string>()
 
-  records.forEach((raw, index) => {
+  records.forEach((rawInput, index) => {
+    // Strip control and bidi characters from every string before anything reads it.
+    const cleaned = sanitizeDeep(rawInput)
+    if (cleaned.changed) issues.push(issue('warning', 'TEXT_SANITIZED', 'Control or bidirectional-override characters were removed from this record.', index, recordTypeOf(cleaned.value), recordIdOf(cleaned.value), null))
+    const raw = nullInvalidReferences(cleaned.value, issues, index)
     const withType = inferRecordType(raw)
     const parsed = RecordInput.safeParse(withType)
     if (!parsed.success) {
@@ -149,7 +155,7 @@ export function normalizeRecords(rawRecords: unknown[]): NormalizeResult {
     }
     const rec = parsed.data
     const rid = primaryId(rec)
-    if (!ID_PATTERN.test(rid)) {
+    if (!ID_PATTERN.test(rid) || (rec.record_type === 'action' && !ID_PATTERN.test(rec.event_id))) {
       issues.push(issue('error', 'INVALID_ID', `Identifier "${truncate(rid)}" contains characters outside the allowed set.`, index, rec.record_type, rid, null))
       stats.records_rejected++
       return
@@ -386,6 +392,26 @@ function ts(raw: string | null | undefined, ctx: Ctx, field: string): string | n
     return null
   }
   return new Date(t).toISOString()
+}
+
+/** Reference fields (not the record's own id). An id outside the allowed alphabet cannot name anything registered. */
+const REFERENCE_KEYS = new Set(['parent_delegation_id', 'root_principal_id', 'delegator_principal_id', 'delegatee_principal_id', 'actor_principal_id', 'parent_principal_id', 'delegation_id', 'parent_event_id', 'execution_identity_id', 'credential_id', 'tool_id', 'resource_id', 'policy_id', 'bound_principal_id', 'delegated_user', 'agent_id', 'parent_agent', 'tool', 'resource', 'target_id'])
+
+function nullInvalidReferences(raw: unknown, issues: IngestIssue[], index: number): unknown {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return raw
+  const r = raw as Record<string, unknown>
+  let out: Record<string, unknown> | null = null
+  for (const key of REFERENCE_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(r, key)) continue
+    const v = r[key]
+    if (key === 'target_id') continue // a revocation's own subject: checked as its primary id
+    if (typeof v === 'string' && !ID_PATTERN.test(v)) {
+      out ??= { ...r }
+      out[key] = null
+      issues.push(issue('warning', 'INVALID_ID', `${key} "${v.slice(0, 40)}" is not a valid identifier and was treated as not recorded.`, index, recordTypeOf(r), recordIdOf(r), key))
+    }
+  }
+  return out ?? r
 }
 
 function inferRecordType(raw: unknown): unknown {

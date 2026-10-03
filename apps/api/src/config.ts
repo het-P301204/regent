@@ -1,4 +1,8 @@
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+/** Repository root, so every entry point (npm run dev, dev:api, start) shares one data directory. */
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 
 /**
  * Configuration comes only from the environment. There are no secrets in the
@@ -38,7 +42,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] 
     port,
     host: env['HOST'] ?? (production ? '0.0.0.0' : '127.0.0.1'),
     databaseUrl: env['DATABASE_URL'] || null,
-    dataDir: resolve(env['REGENT_DATA_DIR'] ?? '.data/pglite'),
+    dataDir: resolve(REPO_ROOT, env['REGENT_DATA_DIR'] ?? '.data/pglite'),
     memory: env['REGENT_DB'] === 'memory',
     // Password-less demo personas: on by default for local development only.
     demoMode: (env['REGENT_DEMO_MODE'] ?? (production ? 'false' : 'true')) === 'true',
@@ -47,7 +51,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] 
     maxImportBytes: Number(env['REGENT_MAX_IMPORT_BYTES'] ?? 5 * 1024 * 1024),
     sessionHours: Number(env['REGENT_SESSION_HOURS'] ?? 8),
     logLevel: (env['REGENT_LOG_LEVEL'] as Config['logLevel']) ?? 'info',
-    webDist: resolve(env['REGENT_WEB_DIST'] ?? 'apps/web/dist'),
+    webDist: resolve(REPO_ROOT, env['REGENT_WEB_DIST'] ?? 'apps/web/dist'),
     adminEmail: env['REGENT_ADMIN_EMAIL'] || null,
     adminPassword: env['REGENT_ADMIN_PASSWORD'] || null,
   }

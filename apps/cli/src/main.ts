@@ -67,7 +67,7 @@ function parseArgs(argv: string[]) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=')
       if (v !== undefined) flags[k!] = v
-      else if (argv[i + 1] && !argv[i + 1]!.startsWith('--') && ['input', 'fail-on', 'severity', 'format', 'out'].includes(k!)) flags[k!] = argv[++i]!
+      else if (argv[i + 1] && !argv[i + 1]!.startsWith('--') && ['input', 'fail-on', 'severity'].includes(k!)) flags[k!] = argv[++i]!
       else flags[k!] = true
     } else positional.push(a)
   }
@@ -125,11 +125,11 @@ function printChain(b: EvidenceBundle, run: VerificationRun, v: ActionVerificati
     out()
     out(c.red('Authority amplification detected'))
     out()
-    out(c.muted('Parent:'))
-    out(`  ${formatScope(amp.authority_delta.available ?? amp.authority_delta.granted)}`)
-    out(c.muted('Child:'))
+    out(c.muted('Delegated (effective):'))
+    out(`  ${formatScope(amp.authority_delta.effective ?? amp.authority_delta.granted)}`)
+    out(c.muted('Exercised:'))
     out(`  ${formatScope(amp.authority_delta.exercised ?? amp.authority_delta.granted)}`)
-    out(c.muted('Unexpected scope:'))
+    out(c.muted('Unauthorized expansion:'))
     out(`  ${c.red(formatScope(amp.authority_delta.excess))}`)
   }
 }
@@ -173,6 +173,7 @@ ${c.ivory('Usage')}
   regent explain <event-id> [--input <file>]
   regent scenario <slug|number|list>
   regent export <out.json|out.csv> [--input <file>]
+  regent chains [--input <file>]       one line per chain with its health
 
 Commands without --input use the last analysis saved in .regent/last.json.
 Exit codes: 0 ok, 1 findings at or above --fail-on, 2 usage or input error.`

@@ -27,7 +27,7 @@ describe('regent CLI', () => {
   it('verifies a ChainSpec and reports amplification', () => {
     const r = run(['verify', join(ROOT, 'examples', 'chain.json')], cwd)
     expect(r.out).toContain('Authority amplification detected')
-    expect(r.out).toContain('Unexpected scope:')
+    expect(r.out).toContain('Unauthorized expansion:')
     expect(r.out).toMatch(/customer\.write/)
   })
 

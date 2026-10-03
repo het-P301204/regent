@@ -12,7 +12,11 @@ const ops: Record<string, Record<string, Op>> = {
   '/api/auth/demo': { post: { summary: 'Sign in as a demo persona (demo mode only)', tags: ['auth'], role: 'none', body: 'DemoLogin' } },
   '/api/auth/logout': { post: { summary: 'End the session', tags: ['auth'] } },
   '/api/auth/session': { get: { summary: 'Current session, CSRF token and organization', tags: ['auth'], role: 'none' } },
-  '/api/tokens': { post: { summary: 'Create an API token (returned once)', tags: ['auth'], role: 'analyst', body: 'TokenCreate' } },
+  '/api/tokens': {
+    post: { summary: 'Create an expiring API token (returned once). Not available to demo personas.', tags: ['auth'], role: 'analyst', body: 'TokenCreate' },
+    get: { summary: 'List API tokens (admins: the organization; others: their own). Prefixes only.', tags: ['auth'], role: 'analyst' },
+  },
+  '/api/tokens/{prefix}': { delete: { summary: 'Revoke an API token', tags: ['auth'], role: 'analyst', params: [['prefix', 'path', 'Token prefix from GET /api/tokens']] } },
   '/api/datasets': { get: { summary: 'List datasets in the organization with their latest run', tags: ['datasets'] } },
   '/api/datasets/{id}/activate': { post: { summary: 'Make a dataset the active workspace', tags: ['datasets'], params: [['id', 'path', 'Dataset id']] } },
   '/api/datasets/reset-demo': { post: { summary: 'Switch back to the demo dataset', tags: ['datasets'] } },
@@ -44,7 +48,7 @@ const ops: Record<string, Record<string, Op>> = {
   '/api/policies': { get: { summary: 'Authorization policies recorded in the evidence', tags: ['policy'] } },
   '/api/scenarios': {
     get: { summary: 'Scenario lab catalogue', tags: ['scenarios'] },
-    post: { summary: 'Load a scenario as a dataset and verify it', tags: ['scenarios'], body: 'ScenarioLoad' },
+    post: { summary: 'Load a scenario as a dataset and verify it', tags: ['scenarios'], role: 'analyst', body: 'ScenarioLoad' },
   },
   '/api/builder/verify': { post: { summary: 'Verify a ChainSpec without storing it', tags: ['builder'], body: 'ChainSpec' } },
   '/api/builder/save': { post: { summary: 'Store a ChainSpec as a dataset', tags: ['builder'], role: 'analyst', body: 'ChainSpec' } },
@@ -57,7 +61,7 @@ const ops: Record<string, Record<string, Op>> = {
   '/api/reports': { get: { summary: 'Available reports and exports', tags: ['reports'] } },
   '/api/reports/security.pdf': { get: { summary: 'Security report (PDF)', tags: ['reports'], role: 'auditor', produces: 'application/pdf' } },
   '/api/reports/investigation/{event}': { get: { summary: 'Investigation report for one event (PDF)', tags: ['reports'], role: 'auditor', params: [['event', 'path', 'Event id, optionally with .pdf']], produces: 'application/pdf' } },
-  '/api/exports/{file}': { get: { summary: 'findings.json | findings.csv | events.json | events.csv', tags: ['reports'], params: [['file', 'path', 'Export file name']] } },
+  '/api/exports/{file}': { get: { summary: 'findings.json | findings.csv (viewer) · events.json | events.csv (raw evidence, auditor)', tags: ['reports'], params: [['file', 'path', 'Export file name']] } },
   '/api/audit-log': { get: { summary: "REGENT's own audit log", tags: ['system'], role: 'admin' } },
 }
 
@@ -109,7 +113,7 @@ export function openApiDocument() {
         Error: { type: 'object', properties: { error: { type: 'object', properties: { code: { type: 'string' }, message: { type: 'string' }, details: {}, request_id: { type: 'string' } }, required: ['code', 'message', 'request_id'] } } },
         Login: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string', format: 'email' }, password: { type: 'string' } } },
         DemoLogin: { type: 'object', required: ['persona'], properties: { persona: { enum: ['admin', 'analyst', 'auditor', 'viewer'] } } },
-        TokenCreate: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 80 } } },
+        TokenCreate: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 80 }, expires_in_days: { type: 'integer', minimum: 1, maximum: 365, default: 90 } } },
         Import: { type: 'object', required: ['name', 'content'], properties: { name: { type: 'string' }, filename: { type: 'string' }, format: { enum: ['json', 'jsonl', 'auto'] }, content: { type: 'string', description: 'JSON (bundle, array or single record) or JSONL text. Max 5 MB by default.' } } },
         Generate: { type: 'object', required: ['scenarios'], properties: { scenarios: { type: 'array', items: { type: 'string' } } } },
         Replay: { type: 'object', required: ['event_id'], properties: { event_id: { type: 'string' } } },

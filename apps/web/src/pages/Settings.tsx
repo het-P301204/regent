@@ -8,7 +8,7 @@ import { useSession } from '../lib/session'
 import { useTheme } from '../lib/prefs'
 import { plural, stamp } from '../lib/format'
 import type { DatasetRow, Role } from '../lib/types'
-import { Badge, Button, LinkButton, PageHeader, TextInput, cx } from '../ui/primitives'
+import { Badge, Button, LinkButton, PageHeader, Select, TextInput, cx } from '../ui/primitives'
 import { SourceTag } from '../ui/status'
 import { CopyButton } from '../ui/data'
 import { EmptyState, ErrorState, LoadingState, useToast } from '../ui/feedback'
@@ -290,10 +290,31 @@ function Datasets() {
 
 // -------------------------------------------------------------------- tokens
 
+interface TokenRow {
+  token_prefix: string
+  name: string
+  created_at: string
+  last_used_at: string | null
+  expires_at: string
+  revoked_at: string | null
+  owner: string
+}
+
 function Tokens() {
   const [name, setName] = useState('')
+  const [days, setDays] = useState(90)
   const [touched, setTouched] = useState(false)
-  const create = useMutation({ mutationFn: (n: string) => api.post<{ token: string; prefix: string; note: string }>('/api/tokens', { name: n }) })
+  const { session } = useSession()
+  const qc = useQueryClient()
+  const list = useQuery({ queryKey: ['tokens'], queryFn: () => api.get<{ tokens: TokenRow[] }>('/api/tokens'), enabled: !session?.user?.is_demo_persona })
+  const create = useMutation({
+    mutationFn: (n: string) => api.post<{ token: string; prefix: string; expires_at: string; note: string }>('/api/tokens', { name: n, expires_in_days: days }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tokens'] }),
+  })
+  const revoke = useMutation({
+    mutationFn: (prefix: string) => api.del(`/api/tokens/${encodeURIComponent(prefix)}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tokens'] }),
+  })
   const trimmed = name.trim()
   const invalid = trimmed.length === 0 || trimmed.length > 80
   const submit = (e: FormEvent) => {
@@ -322,6 +343,11 @@ function Tokens() {
             </div>
           </div>
         ) : null}
+        {session?.user?.is_demo_persona ? (
+          <p className="mb-3 rounded border border-amber/45 bg-amber/[0.06] px-3 py-2 text-[12px] text-amber-ink">
+            Demo personas sign in without a password, so they cannot create API tokens. Sign in with a real account to create one.
+          </p>
+        ) : null}
         <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row sm:items-end" noValidate>
           <TextInput
             label="Token name"
@@ -333,7 +359,13 @@ function Tokens() {
             aria-invalid={touched && invalid ? true : undefined}
             className="flex-1 sm:max-w-sm"
           />
-          <Button type="submit" variant="primary" icon={<KeyRound size={14} />} loading={create.isPending}>
+          <Select label="Expires after" value={String(days)} onChange={(e) => setDays(Number(e.target.value))} className="sm:w-36">
+            <option value="7">7 days</option>
+            <option value="30">30 days</option>
+            <option value="90">90 days</option>
+            <option value="365">1 year</option>
+          </Select>
+          <Button type="submit" variant="primary" icon={<KeyRound size={14} />} loading={create.isPending} disabled={session?.user?.is_demo_persona}>
             Create token
           </Button>
         </form>
@@ -342,6 +374,39 @@ function Tokens() {
           <p role="alert" className="mt-2 text-[12px] text-amber-ink">
             {create.error instanceof Error ? create.error.message : 'Could not create the token.'}
           </p>
+        ) : null}
+        {list.data && list.data.tokens.length > 0 ? (
+          <table className="mt-5 w-full border-collapse text-left text-[12px]">
+            <caption className="sr-only">Your API tokens</caption>
+            <thead>
+              <tr className="border-b hairline">
+                {['Name', 'Prefix', 'Owner', 'Last used', 'Expires', ''].map((h) => (
+                  <th key={h} scope="col" className="eyebrow py-2 pr-3 font-normal">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {list.data.tokens.map((t) => {
+                const dead = t.revoked_at !== null || new Date(t.expires_at) < new Date()
+                return (
+                  <tr key={t.token_prefix} className={dead ? 'border-b hairline text-ink-3' : 'border-b hairline'}>
+                    <td className="py-2 pr-3">{t.name}</td>
+                    <td className="py-2 pr-3 font-mono text-[11px]">{t.token_prefix}…</td>
+                    <td className="py-2 pr-3 text-ink-2">{t.owner}</td>
+                    <td className="py-2 pr-3 font-mono text-[11px]">{t.last_used_at ? String(t.last_used_at).slice(0, 16).replace('T', ' ') : 'never'}</td>
+                    <td className="py-2 pr-3 font-mono text-[11px]">{t.revoked_at ? 'revoked' : String(t.expires_at).slice(0, 10)}</td>
+                    <td className="py-2 text-right">
+                      {dead ? null : (
+                        <Button size="sm" variant="ghost" loading={revoke.isPending && revoke.variables === t.token_prefix} onClick={() => revoke.mutate(t.token_prefix)}>
+                          Revoke
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         ) : null}
       </div>
     </SectionPanel>

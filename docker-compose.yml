@@ -31,9 +31,12 @@ services:
     build: .
     environment:
       DATABASE_URL: postgres://regent:${POSTGRES_PASSWORD}@postgres:5432/regent
+      # Password-less demo personas for the fictional Acme org. Set false before loading real data;
+      # existing demo sessions and tokens stop working the moment it is off.
       REGENT_DEMO_MODE: ${REGENT_DEMO_MODE:-true}
       REGENT_COOKIE_SECURE: ${REGENT_COOKIE_SECURE:-false}
-      REGENT_ALLOWED_ORIGINS: ${REGENT_ALLOWED_ORIGINS:-http://127.0.0.1:8787,http://localhost:8787,http://127.0.0.1:5173,http://localhost:5173}
+      # Add http://127.0.0.1:5173,http://localhost:5173 when running --profile dev.
+      REGENT_ALLOWED_ORIGINS: ${REGENT_ALLOWED_ORIGINS:-http://127.0.0.1:8787,http://localhost:8787}
       REGENT_ADMIN_EMAIL: ${REGENT_ADMIN_EMAIL:-}
       REGENT_ADMIN_PASSWORD: ${REGENT_ADMIN_PASSWORD:-}
       REGENT_LOG_LEVEL: ${REGENT_LOG_LEVEL:-info}

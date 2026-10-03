@@ -167,7 +167,7 @@ export default function Scenarios() {
                       <span className="font-mono text-[10.5px] text-ink-3">
                         {s.record_count} synthetic records · {s.focus_event}
                       </span>
-                      <Button size="sm" variant={isTarget && load.isPending ? 'primary' : 'secondary'} icon={<Play size={12} aria-hidden />} loading={isTarget && load.isPending} disabled={load.isPending && !isTarget} onClick={() => start(s)} aria-label={`Load scenario ${s.number}: ${s.title}`}>
+                      <Button size="sm" variant={isTarget && load.isPending ? 'primary' : 'secondary'} icon={<Play size={12} aria-hidden />} loading={isTarget && load.isPending} disabled={(load.isPending && !isTarget) || !can('analyst')} title={can('analyst') ? undefined : 'Loading a scenario creates a dataset, which needs the analyst role.'} onClick={() => start(s)} aria-label={`Load scenario ${s.number}: ${s.title}`}>
                         Load scenario
                       </Button>
                     </div>

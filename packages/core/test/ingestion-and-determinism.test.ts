@@ -72,6 +72,23 @@ describe('ingestion', () => {
     expect(r.bundle.actions[0]!.timestamp).toBeNull()
     expect(r.issues.map((i) => i.code)).toContain('INVALID_TIMESTAMP')
   })
+  it('strips terminal escapes and bidi overrides from text, and nulls malformed references', () => {
+    const ESC = String.fromCharCode(27)
+    const RLO = String.fromCharCode(0x202e)
+    const r = normalizeText(JSON.stringify([
+      { record_type: 'principal', principal_id: 'h', principal_type: 'human', display_name: `Ma${ESC}[2Jya${RLO}` },
+      { event_id: 'e1', actor_principal_id: 'h', delegation_id: `d${ESC}]8;;http://evil/${ESC}`, timestamp: '2026-10-03T10:00:00Z' },
+    ]))
+    expect(r.bundle.principals[0]!.display_name).toBe('Ma[2Jya')
+    expect(r.issues.map((i) => i.code)).toContain('TEXT_SANITIZED')
+    const all = JSON.stringify(r.bundle)
+    for (const bad of [ESC, RLO]) expect(all.includes(bad)).toBe(false)
+  })
+  it('rejects an action whose event id is not a valid identifier', () => {
+    const r = normalizeText(JSON.stringify({ record_type: 'action', event_id: '../../etc/passwd', action_id: 'a1', actor_principal_id: 'h' }))
+    expect(r.bundle.actions).toHaveLength(0)
+    expect(r.issues.map((i) => i.code)).toContain('INVALID_ID')
+  })
   it('accepts a bundle with typed arrays', () => {
     const r = normalizeText(JSON.stringify({ principals: [{ principal_id: 'h', principal_type: 'human' }], events: [{ event_id: 'e1', actor_principal_id: 'h' }] }))
     expect(r.bundle.principals).toHaveLength(1)

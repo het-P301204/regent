@@ -23,7 +23,19 @@ export interface ParsedPermission {
   wildcard: boolean
 }
 
+const parseCache = new Map<string, ParsedPermission>()
+
+/** Memoized: scope checks call this inside nested loops. Bounded so hostile input cannot grow it without limit. */
 export function parsePermission(raw: string): ParsedPermission {
+  const hit = parseCache.get(raw)
+  if (hit) return hit
+  const parsed = parsePermissionUncached(raw)
+  if (parseCache.size > 20_000) parseCache.clear()
+  parseCache.set(raw, parsed)
+  return parsed
+}
+
+function parsePermissionUncached(raw: string): ParsedPermission {
   if (typeof raw !== 'string' || raw.length === 0 || raw.length > MAX_PERMISSION_LENGTH) {
     return { raw: String(raw), valid: false, segments: [], wildcard: false }
   }

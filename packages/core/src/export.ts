@@ -1,5 +1,8 @@
 import type { FindingExport } from './schemas.ts'
 import type { Finding, FindingStatus, VerificationRun } from './types.ts'
+import { stripBidi } from './text.ts'
+
+export { stripBidi }
 
 /** Machine-readable findings, schema `regent.finding/v1`. Field order and names are stable. */
 export function toFindingExports(run: VerificationRun, statuses: Map<string, FindingStatus> = new Map()): FindingExport[] {
@@ -55,16 +58,6 @@ export function csvCell(value: unknown): string {
   return s
 }
 
-export function stripBidi(s: string): string {
-  let out = ''
-  for (const ch of s) {
-    const c = ch.codePointAt(0)!
-    const bidi = (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069) || c === 0x200e || c === 0x200f || c === 0x061c
-    const control = (c < 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d) || c === 0x7f
-    if (!bidi && !control) out += ch
-  }
-  return out
-}
 
 export function findingsCsv(run: VerificationRun, statuses: Map<string, FindingStatus> = new Map()): string {
   const header = ['finding_id', 'type', 'rule_id', 'severity', 'status', 'title', 'summary', 'action_id', 'delegation_id', 'broken_edge_from', 'broken_edge_to', 'excess_authority', 'affected_principals', 'affected_resources', 'first_seen', 'last_seen', 'remediation']

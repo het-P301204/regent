@@ -111,19 +111,29 @@ export function cors(config: Config): MiddlewareHandler<Env> {
   }
 }
 
-/** Fixed-window rate limiter keyed by client address and bucket. In-memory: one API instance. */
-export function rateLimit(bucket: string, limit: number, windowMs: number): MiddlewareHandler<Env> {
+/**
+ * Fixed-window rate limiter. In-memory, so it applies per API instance.
+ * `keyBy` chooses what is limited: the client address (default) or, for
+ * authenticated endpoints, the user, so one account cannot spread load
+ * across addresses and many users behind one proxy do not share a bucket.
+ */
+export function rateLimit(bucket: string, limit: number, windowMs: number, keyBy: 'address' | 'user' = 'address'): MiddlewareHandler<Env> {
   const hits = new Map<string, { count: number; reset: number }>()
+  let nextSweep = Date.now() + windowMs
   return async (c, next) => {
     const now = Date.now()
-    const key = `${bucket}:${clientAddress(c)}`
+    if (now >= nextSweep) {
+      for (const [k, v] of hits) if (v.reset <= now) hits.delete(k)
+      nextSweep = now + windowMs
+    }
+    const who = keyBy === 'user' && c.get('user') ? `u:${c.get('user')!.user_id}` : `a:${clientAddress(c)}`
+    const key = `${bucket}:${who}`
     let h = hits.get(key)
     if (!h || h.reset <= now) {
       h = { count: 0, reset: now + windowMs }
       hits.set(key, h)
     }
     h.count++
-    if (hits.size > 10_000) for (const [k, v] of hits) if (v.reset <= now) hits.delete(k)
     c.header('RateLimit-Limit', String(limit))
     c.header('RateLimit-Remaining', String(Math.max(0, limit - h.count)))
     if (h.count > limit) {
@@ -134,27 +144,46 @@ export function rateLimit(bucket: string, limit: number, windowMs: number): Midd
   }
 }
 
-function clientAddress(c: Context<Env>): string {
-  // Only trust X-Forwarded-For when explicitly deployed behind a proxy that sets it.
-  if (process.env['REGENT_TRUST_PROXY'] === 'true') {
-    const fwd = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-    if (fwd) return fwd
-  }
+/**
+ * The client address used for rate limiting. Behind N trusted proxies
+ * (REGENT_TRUST_PROXY_HOPS=N), the client is the Nth entry from the RIGHT of
+ * X-Forwarded-For: everything to its left was supplied by the client and can
+ * be forged. IPv6 addresses are bucketed by /64, the smallest block a single
+ * client is normally assigned.
+ */
+export function clientAddress(c: Context<Env>): string {
   const env = c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined
-  return env?.incoming?.socket?.remoteAddress ?? 'local'
+  let addr = env?.incoming?.socket?.remoteAddress ?? 'local'
+  const hops = Number(process.env['REGENT_TRUST_PROXY_HOPS'] ?? (process.env['REGENT_TRUST_PROXY'] === 'true' ? 1 : 0))
+  if (hops > 0) {
+    const chain = (c.req.header('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+    const picked = chain[chain.length - hops]
+    if (picked) addr = picked
+  }
+  return bucketAddress(addr)
+}
+
+export function bucketAddress(addr: string): string {
+  const a = addr.replace(/^::ffff:/, '')
+  if (!a.includes(':')) return a
+  const groups = a.split('::')
+  const head = groups[0] ? groups[0].split(':') : []
+  const tail = groups.length > 1 && groups[1] ? groups[1].split(':') : []
+  const full = groups.length > 1 ? [...head, ...Array(Math.max(0, 8 - head.length - tail.length)).fill('0'), ...tail] : head
+  return `${full.slice(0, 4).map((g) => g || '0').join(':')}::/64`
 }
 
 /** Resolve the caller from a session cookie or a bearer API token. */
-export function authenticate(db: Db): MiddlewareHandler<Env> {
+export function authenticate(db: Db, demoMode: boolean): MiddlewareHandler<Env> {
   return async (c, next) => {
     const auth = c.req.header('authorization')
     let user: Principal | null = null
     if (auth?.startsWith('Bearer ')) {
-      user = await resolveApiToken(db, auth.slice(7).trim())
+      user = await resolveApiToken(db, auth.slice(7).trim(), demoMode)
       if (!user) throw new HttpError(401, 'INVALID_TOKEN', 'The API token is invalid or revoked.')
     } else {
       const token = getCookie(c, SESSION_COOKIE)
-      if (token) user = await resolveSession(db, token)
+      if (token) user = await resolveSession(db, token, demoMode)
     }
     c.set('user', user)
     await next()
@@ -162,14 +191,23 @@ export function authenticate(db: Db): MiddlewareHandler<Env> {
 }
 
 /**
- * CSRF for cookie-authenticated mutations: the request must echo the session's
- * CSRF token in a header (double submit), and a present Origin must be allowed
- * or same-origin. Bearer-token requests carry no ambient credentials and skip it.
+ * CSRF for cookie-authenticated mutations, three layers: a synchronizer token
+ * (stored server-side with the session, delivered to the page, echoed in a
+ * header), an Origin check when the header is present, and a required JSON
+ * content type so no cross-site "simple request" can reach a mutating route.
+ * Bearer-token requests carry no ambient credentials and skip the token check.
  */
 export function csrf(config: Config): MiddlewareHandler<Env> {
   return async (c, next) => {
     const method = c.req.method
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next()
+    // Mutations carry JSON. Requiring the content type means a cross-site form or
+    // text/plain POST cannot be a "simple request": the browser must preflight it.
+    const type = (c.req.header('content-type') ?? '').split(';')[0]!.trim().toLowerCase()
+    const hasBody = Number(c.req.header('content-length') ?? '0') > 0 || c.req.header('transfer-encoding') !== undefined
+    if ((hasBody || method === 'POST') && type !== 'application/json' && !(method === 'POST' && !hasBody && type === '')) {
+      throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Requests that change data must send Content-Type: application/json.')
+    }
     const user = c.get('user')
     const origin = c.req.header('origin')
     if (origin) {

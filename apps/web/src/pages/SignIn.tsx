@@ -20,6 +20,9 @@ const ROLE_ORDER: Role[] = ['admin', 'analyst', 'auditor', 'viewer']
 /** Only same-origin paths: never follow `next` to another host. */
 function safeNext(raw: string | null): string {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '/app'
+  // Reject control characters and encoded slashes/backslashes that could re-form "//host".
+  for (const ch of raw) if (ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f) return '/app'
+  if (/%(2f|5c|09|0a|0d)/i.test(raw)) return '/app'
   return raw
 }
 

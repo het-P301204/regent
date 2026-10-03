@@ -12,7 +12,7 @@ import type { RawRecord } from './builder.ts'
  * from 09:00, actions run from 09:30.
  */
 
-const scope = z.array(z.string().max(160)).max(64)
+const scope = z.array(z.string().max(160)).max(32)
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:@-]{0,95}$/, 'ids may contain letters, digits and . _ : @ -')
 
 export const ChainSpecSchema = z.object({
@@ -24,7 +24,7 @@ export const ChainSpecSchema = z.object({
     /** For a human: the authority it holds. Ignored for agents (they hold only what is delegated). */
     scope: scope.optional(),
     revoked: z.boolean().optional(),
-  })).min(1).max(40),
+  })).min(1).max(24),
   delegations: z.array(z.object({
     from: id,
     to: id,
@@ -35,7 +35,7 @@ export const ChainSpecSchema = z.object({
     policy_version: z.string().max(32).nullable().optional(),
     /** Record the parent delegation reference. Default true; false exercises registry lookup. */
     cite_parent: z.boolean().optional(),
-  })).max(80),
+  })).max(40),
   actions: z.array(z.object({
     actor: id,
     tool: z.string().min(1).max(80),
@@ -50,7 +50,7 @@ export const ChainSpecSchema = z.object({
     policy_version: z.string().max(32).nullable().optional(),
     cite_delegation: z.boolean().optional(),
     decision_cached_before_revocation: z.boolean().optional(),
-  })).max(40),
+  })).max(20),
 })
 export type ChainSpec = z.infer<typeof ChainSpecSchema>
 
@@ -71,6 +71,8 @@ export function chainSpecToRecords(spec: ChainSpec): RawRecord[] {
 
   const delegationIds: string[] = []
   const inbound = new Map<string, string>()
+  const rootOf = new Map<string, string>()
+  for (const p of spec.principals) if (p.type === 'human') rootOf.set(p.id, p.id)
   spec.delegations.forEach((d, i) => {
     const did = `del-${String(i + 1).padStart(2, '0')}-${slug(d.from)}-${slug(d.to)}`.slice(0, 120)
     delegationIds.push(did)
@@ -90,6 +92,7 @@ export function chainSpecToRecords(spec: ChainSpec): RawRecord[] {
       event: `evt-${did}`,
     })
     if (!inbound.has(d.to)) inbound.set(d.to, did)
+    if (!rootOf.has(d.to) && rootOf.has(d.from)) rootOf.set(d.to, rootOf.get(d.from)!)
   })
 
   const tools = new Set<string>()
@@ -109,6 +112,7 @@ export function chainSpecToRecords(spec: ChainSpec): RawRecord[] {
     b.act({
       event: `evt-builder-${String(i + 1).padStart(2, '0')}`,
       actor: a.actor,
+      root: rootOf.get(a.actor) ?? null,
       delegation: a.cite_delegation === false ? null : (inbound.get(a.actor) ?? null),
       at,
       tool: toolId,

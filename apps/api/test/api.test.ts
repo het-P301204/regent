@@ -25,7 +25,7 @@ class Client {
     if (this.cookies.size) headers['cookie'] = [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ')
     if (this.csrf && method !== 'GET' && !('x-regent-csrf' in extra)) headers['x-regent-csrf'] = this.csrf
     if (this.bearer) headers['authorization'] = `Bearer ${this.bearer}`
-    if (body !== undefined) headers['content-type'] = 'application/json'
+    if (body !== undefined && !('content-type' in extra)) headers['content-type'] = 'application/json'
     const res = await app.request(`${BASE}${path}`, { method, headers, body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body) })
     for (const sc of res.headers.getSetCookie()) {
       const [pair] = sc.split(';')
@@ -126,17 +126,49 @@ describe('authentication and authorization', () => {
     expect((await viewer.req('GET', '/api/reports/security.pdf')).status).toBe(403)
     expect((await viewer.json('PUT', '/api/rules/AUTH-001', { enabled: false })).status).toBe(403)
   })
-  it('accepts bearer tokens without CSRF', async () => {
-    const c = await new Client().demo('analyst')
-    const t = await c.json('POST', '/api/tokens', { name: 'ci' })
+  it('accepts bearer tokens without CSRF, lists them, and revokes them', async () => {
+    const c = new Client()
+    const login = await c.json('POST', '/api/auth/login', { email: 'mallory@other.example', password: 'correct horse battery staple' })
+    c.csrf = login.body.csrf_token
+    const t = await c.json('POST', '/api/tokens', { name: 'ci', expires_in_days: 30 })
     expect(t.status).toBe(201)
+    expect(t.body.expires_at).toBeTruthy()
     const bot = new Client()
     bot.bearer = t.body.token
-    expect((await bot.json('GET', '/api/findings')).status).toBe(200)
-    expect((await bot.json('POST', '/api/analyze')).status).toBe(200)
+    expect((await bot.json('GET', '/api/datasets')).status).toBe(200)
+    const list = await c.json('GET', '/api/tokens')
+    expect(list.body.tokens.some((x: any) => x.token_prefix === t.body.prefix && !x.token_prefix.includes(t.body.token))).toBe(true)
+    expect((await c.json('DELETE', `/api/tokens/${t.body.prefix}`)).status).toBe(200)
+    expect((await bot.json('GET', '/api/datasets')).status).toBe(401)
     const bad = new Client()
     bad.bearer = 'rgt_not-a-token'
     expect((await bad.json('GET', '/api/findings')).status).toBe(401)
+  })
+  it('refuses API tokens for password-less demo personas', async () => {
+    const c = await new Client().demo('admin')
+    const r = await c.json('POST', '/api/tokens', { name: 'x' })
+    expect(r.status).toBe(403)
+    expect(r.body.error.code).toBe('DEMO_PERSONA')
+  })
+  it('requires JSON on mutations so cross-site simple requests are impossible', async () => {
+    const c = await new Client().demo('analyst')
+    const r = await c.req('POST', '/api/analyze', 'x', { 'content-type': 'text/plain' })
+    expect(r.status).toBe(415)
+    const anon = await new Client().req('POST', '/api/auth/demo', '{"persona":"admin"}', { 'content-type': 'text/plain' })
+    expect(anon.status).toBe(415)
+  })
+  it('gates raw evidence exports on the auditor role and validates the export name before auditing', async () => {
+    const viewer = await new Client().demo('viewer')
+    expect((await viewer.req('GET', '/api/exports/events.json')).status).toBe(403)
+    expect((await viewer.req('GET', '/api/exports/findings.json')).status).toBe(200)
+    expect((await viewer.req('GET', '/api/exports/..%2f..%2fetc')).status).toBe(404)
+  })
+  it('stops honouring demo sessions once demo mode is turned off', async () => {
+    const c = await new Client().demo('analyst')
+    expect((await c.json('GET', '/api/datasets')).status).toBe(200)
+    const off = createApp({ db, config: { ...loadConfig({ REGENT_LOG_LEVEL: 'silent', REGENT_DEMO_MODE: 'false' } as NodeJS.ProcessEnv, []), memory: true }, workspace: new WorkspaceService(db) })
+    const res = await off.request(`${BASE}/api/datasets`, { headers: { cookie: [...c.cookies].map(([k, v]) => `${k}=${v}`).join('; ') } })
+    expect(res.status).toBe(401)
   })
 })
 
@@ -190,8 +222,12 @@ describe('ingestion and verification', () => {
     const r = await c.json('POST', '/api/events', { name: 'big', content: 'x'.repeat(6 * 1024 * 1024) })
     expect(r.status).toBe(413)
   })
+  it('only analysts can load scenarios (it creates a dataset)', async () => {
+    const viewer = await new Client().demo('viewer')
+    expect((await viewer.json('POST', '/api/scenarios', { slug: 'valid-single-agent' })).status).toBe(403)
+  })
   it('loads every scenario and produces exactly its expected findings', async () => {
-    const c = await new Client().demo('viewer')
+    const c = await new Client().demo('analyst')
     for (const s of SCENARIOS) {
       const r = await c.json('POST', '/api/scenarios', { slug: s.slug })
       expect(r.status, s.slug).toBe(201)

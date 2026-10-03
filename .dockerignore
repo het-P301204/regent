@@ -1,0 +1,17 @@
+# Keep secrets, local databases and build output out of the build context.
+.git
+.github
+.env
+.env.*
+!.env.example
+.data
+.regent
+.claude
+.playwright-mcp
+**/node_modules
+**/dist
+test-results
+playwright-report
+coverage
+docs/screenshots
+*.log

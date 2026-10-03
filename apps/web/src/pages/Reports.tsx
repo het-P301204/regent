@@ -27,7 +27,7 @@ interface ReportsResponse {
 }
 
 /** Minimum role per export. Mirrors the API's route guards so the console can explain a disabled button. */
-const MIN_ROLE: Record<string, Role> = { security: 'auditor', 'evidence-package': 'auditor' }
+const MIN_ROLE: Record<string, Role> = { security: 'auditor', 'evidence-package': 'auditor', 'events-json': 'auditor', 'events-csv': 'auditor' }
 
 const EXPORT_NOTES: Record<string, string> = {
   'findings-json': 'Every finding in the latest run as regent.finding/v1 records, with triage status.',

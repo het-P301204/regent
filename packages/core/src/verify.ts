@@ -124,6 +124,15 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
 
   // ---------------------------------------------------------------- findings
   const findings = new Map<string, Finding>()
+  const accumulators = new Map<string, { related: Set<string>; principals: Set<string>; resources: Set<string>; evidence: Set<string> }>()
+  const accOf = (id: string) => {
+    let a = accumulators.get(id)
+    if (!a) {
+      a = { related: new Set(), principals: new Set(), resources: new Set(), evidence: new Set() }
+      accumulators.set(id, a)
+    }
+    return a
+  }
 
   const ruleActive = (ruleId: RuleId, principalType: PrincipalType | null): RuleConfig | null => {
     const rule = rules.get(ruleId)
@@ -143,11 +152,17 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
     const seen = body.seen.filter((s): s is string => s !== null).sort(compareStrings)
     const existing = findings.get(findingId)
     if (existing) {
-      existing.related_event_ids = canonical([...existing.related_event_ids, ...body.related_event_ids])
-      existing.affected_principal_ids = canonical([...existing.affected_principal_ids, ...body.affected_principal_ids])
-      existing.affected_resource_ids = canonical([...existing.affected_resource_ids, ...body.affected_resource_ids])
+      // Merge into sets; lists are sorted once when the run is finalized (O(n log n), not O(n^2)).
+      const acc = accOf(findingId)
+      for (const x of body.related_event_ids) acc.related.add(x)
+      for (const x of body.affected_principal_ids) acc.principals.add(x)
+      for (const x of body.affected_resource_ids) acc.resources.add(x)
       for (const e of body.evidence) {
-        if (!existing.evidence.some((x) => x.kind === e.kind && x.id === e.id)) existing.evidence.push(e)
+        const k = `${e.kind}:${e.id}`
+        if (!acc.evidence.has(k)) {
+          acc.evidence.add(k)
+          existing.evidence.push(e)
+        }
       }
       if (seen[0] && (!existing.first_seen || seen[0] < existing.first_seen)) existing.first_seen = seen[0]
       const last = seen[seen.length - 1]
@@ -175,6 +190,11 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
       first_seen: seen[0] ?? null,
       last_seen: seen[seen.length - 1] ?? null,
     })
+    const acc = accOf(findingId)
+    for (const x of body.related_event_ids) acc.related.add(x)
+    for (const x of body.affected_principal_ids) acc.principals.add(x)
+    for (const x of body.affected_resource_ids) acc.resources.add(x)
+    for (const e of body.evidence) acc.evidence.add(`${e.kind}:${e.id}`)
     return findingId
   }
 
@@ -317,6 +337,7 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
 
   // ----------------------------------------------------- action-level checks
   const verifications: ActionVerification[] = []
+  const hopCache = new Map<string, ResolvedHop>()
 
   for (const a of bundle.actions) {
     const t = a.timestamp
@@ -345,7 +366,17 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
     }
     const complete = breaks.length === 0 && root !== null
 
-    const hops: ResolvedHop[] = (analysis?.path ?? []).map((d, i) => buildHop(d, i, analysis!.links[i] ?? 'explicit', analyzer.analyze(d), t))
+    const hops: ResolvedHop[] = (analysis?.path ?? []).map((d, i) => {
+      // A hop depends only on its delegation, its link and its validity at t: cache on those.
+      const link = analysis!.links[i] ?? 'explicit'
+      const key = `${d.delegation_id}|${link}|${i}|${temporalOf(d, t)}`
+      let hop = hopCache.get(key)
+      if (!hop) {
+        hop = buildHop(d, i, link, analyzer.analyze(d), t)
+        hopCache.set(key, hop)
+      }
+      return hop
+    })
     const chain: ReconstructedChain = {
       action_id: a.action_id,
       hops,
@@ -359,7 +390,7 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
       for (const fid of delegationFindings.get(d.delegation_id) ?? []) {
         const f = findings.get(fid)
         if (f) {
-          f.related_event_ids = canonical([...f.related_event_ids, a.event_id])
+          accOf(fid).related.add(a.event_id)
           if (t && (!f.last_seen || t > f.last_seen)) f.last_seen = t
         }
       }
@@ -980,6 +1011,14 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
       result,
       reasons,
     }
+  }
+
+  for (const [id, acc] of accumulators) {
+    const f = findings.get(id)
+    if (!f) continue
+    f.related_event_ids = canonical(acc.related)
+    f.affected_principal_ids = canonical(acc.principals)
+    f.affected_resource_ids = canonical(acc.resources)
   }
 
   // Prose only: storage keeps fixed-width ISO strings so they sort lexically.

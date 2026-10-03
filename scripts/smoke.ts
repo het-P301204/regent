@@ -5,7 +5,7 @@
  *   node scripts/smoke.ts http://127.0.0.1:8787
  *   node scripts/smoke.ts https://regent.example.com
  *
- * Exits non-zero on the first failed check. Requires REGENT_DEMO_MODE=true on
+ * Runs every check, then exits non-zero if any failed. Requires REGENT_DEMO_MODE=true on
  * the target, or REGENT_SMOKE_TOKEN set to an API token (Bearer) for it.
  */
 const base = (process.argv[2] ?? 'http://127.0.0.1:8787').replace(/\/$/, '')
@@ -60,11 +60,13 @@ if (!token) {
     return 'session issued'
   })
 }
-await check('reset to demo dataset', async () => {
-  const r = await call('POST', '/api/datasets/reset-demo')
-  assert(r.ok, `status ${r.status}`)
-  return 'active'
-})
+if (!token) {
+  await check('reset to demo dataset', async () => {
+    const r = await call('POST', '/api/datasets/reset-demo')
+    assert(r.ok, `status ${r.status}`)
+    return 'active'
+  })
+}
 await check('overview', async () => {
   const r = await call('GET', '/api/overview')
   const j = (await r.json()) as { metrics: { total_actions: number; authority_violations: number } }
@@ -85,7 +87,8 @@ await check('findings', async () => {
   assert(r.ok && j.total > 0, 'no findings')
   return `${j.total} findings`
 })
-await check('scenario: authority amplification', async () => {
+// Token mode targets a real organization: do not create datasets there.
+if (!token) await check('scenario: authority amplification', async () => {
   const r = await call('POST', '/api/scenarios', { slug: 'authority-amplification' })
   const j = (await r.json()) as { matches_expected: boolean }
   assert(r.ok && j.matches_expected, 'scenario did not produce its expected findings')

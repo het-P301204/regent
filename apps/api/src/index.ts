@@ -4,6 +4,7 @@ import { loadConfig } from './config.ts'
 import { openDb } from './db/driver.ts'
 import { migrate } from './db/migrate.ts'
 import { bootstrap } from './bootstrap.ts'
+import { purgeCredentials } from './auth.ts'
 import { createApp } from './app.ts'
 import { logger } from './security.ts'
 import { WorkspaceService } from './services/workspace.ts'
@@ -24,6 +25,11 @@ const { seeded } = await bootstrap(db, config, workspace)
 log('info', { operation: 'bootstrap', result: seeded ? 'seeded demo organization' : 'existing data', database_engine: db.kind, demo_mode: config.demoMode })
 
 const app = createApp({ db, config, workspace })
+// Expired sessions are purged hourly, not only at startup.
+const purge = setInterval(() => {
+  purgeCredentials(db, config.demoMode).catch((e) => log('error', { operation: 'purge', error: (e as Error).message }))
+}, 3600_000)
+purge.unref()
 const server = serve({ fetch: app.fetch, port: config.port, hostname: config.host }, (info) => {
   log('info', { operation: 'listen', result: `http://${config.host}:${info.port}`, production: config.production })
 })

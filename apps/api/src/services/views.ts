@@ -1,11 +1,91 @@
 import { chainHealth, compareStrings, explainAction, buildReplay, SEVERITY_ORDER } from '@regent/core'
-import type { ActionVerification, EvidenceBundle, Finding, FindingStatus, Severity } from '@regent/core'
+import type { Action, ActionVerification, Delegation, EvidenceBundle, Finding, FindingStatus, ResolvedHop, Severity } from '@regent/core'
 import type { Workspace } from './workspace.ts'
 
 /**
  * View models. These only reshape engine output for display; they never
  * decide anything. Every verdict below is read from the stored run.
  */
+
+/**
+ * Lookup tables built once per verification run and cached with it. Every
+ * route reads through these instead of scanning arrays per row, so request
+ * cost stays linear in the size of the response, not the dataset squared.
+ */
+export interface WorkspaceIndex {
+  action: Map<string, Action>
+  verification: Map<string, ActionVerification>
+  finding: Map<string, Finding>
+  names: ReturnType<typeof nameIndex>
+  hopByDelegation: Map<string, ResolvedHop>
+  actionsByDelegation: Map<string, ActionVerification[]>
+  actionsByCredential: Map<string, ActionVerification[]>
+  actionsByPrincipal: Map<string, ActionVerification[]>
+  findingsByPrincipal: Map<string, Finding[]>
+  findingsByDelegation: Map<string, Finding[]>
+  findingsByCredential: Map<string, Finding[]>
+  delegationsByDelegatee: Map<string, Delegation[]>
+  delegationsByDelegator: Map<string, Delegation[]>
+  delegationsByParent: Map<string, Delegation[]>
+}
+
+const INDEX = new WeakMap<object, WorkspaceIndex>()
+
+function push<K, V>(m: Map<K, V[]>, k: K | null | undefined, v: V) {
+  if (k === null || k === undefined) return
+  const list = m.get(k)
+  if (list) {
+    if (list[list.length - 1] !== v) list.push(v)
+  } else m.set(k, [v])
+}
+
+export function indexOf(ws: Workspace): WorkspaceIndex {
+  const hit = INDEX.get(ws.run)
+  if (hit) return hit
+  const ix: WorkspaceIndex = {
+    action: new Map(ws.bundle.actions.map((a) => [a.action_id, a])),
+    verification: new Map(),
+    finding: new Map(ws.run.findings.map((f) => [f.finding_id, f])),
+    names: nameIndex(ws.bundle),
+    hopByDelegation: new Map(),
+    actionsByDelegation: new Map(),
+    actionsByCredential: new Map(),
+    actionsByPrincipal: new Map(),
+    findingsByPrincipal: new Map(),
+    findingsByDelegation: new Map(),
+    findingsByCredential: new Map(),
+    delegationsByDelegatee: new Map(),
+    delegationsByDelegator: new Map(),
+    delegationsByParent: new Map(),
+  }
+  for (const v of ws.run.actions) {
+    ix.verification.set(v.action_id, v)
+    if (!ix.verification.has(v.event_id)) ix.verification.set(v.event_id, v)
+    push(ix.actionsByPrincipal, v.chain.actor_principal_id, v)
+    for (const h of v.chain.hops) {
+      if (!ix.hopByDelegation.has(h.delegation_id)) ix.hopByDelegation.set(h.delegation_id, h)
+      push(ix.actionsByDelegation, h.delegation_id, v)
+      if (h.delegator_principal_id !== v.chain.actor_principal_id) push(ix.actionsByPrincipal, h.delegator_principal_id, v)
+      if (h.delegatee_principal_id !== v.chain.actor_principal_id && h.delegatee_principal_id !== h.delegator_principal_id) push(ix.actionsByPrincipal, h.delegatee_principal_id, v)
+    }
+    push(ix.actionsByCredential, ix.action.get(v.action_id)?.credential_id, v)
+  }
+  for (const f of ws.run.findings) {
+    for (const p of f.affected_principal_ids) push(ix.findingsByPrincipal, p, f)
+    if (f.delegation_id) push(ix.findingsByDelegation, f.delegation_id, f)
+    for (const e of f.evidence) {
+      if (e.kind === 'delegation' && e.id !== f.delegation_id) push(ix.findingsByDelegation, e.id, f)
+      if (e.kind === 'credential') push(ix.findingsByCredential, e.id, f)
+    }
+  }
+  for (const d of ws.bundle.delegations) {
+    push(ix.delegationsByDelegatee, d.delegatee_principal_id, d)
+    push(ix.delegationsByDelegator, d.delegator_principal_id, d)
+    push(ix.delegationsByParent, d.parent_delegation_id, d)
+  }
+  INDEX.set(ws.run, ix)
+  return ix
+}
 
 export function statusOf(ws: Workspace, id: string): FindingStatus {
   return ws.statuses.get(id)?.status ?? 'OPEN'
@@ -17,9 +97,10 @@ export function findingView(ws: Workspace, f: Finding) {
 }
 
 export function chainRow(ws: Workspace, v: ActionVerification) {
-  const a = ws.bundle.actions.find((x) => x.action_id === v.action_id)!
-  const names = nameIndex(ws.bundle)
-  const worst = v.finding_ids.map((id) => ws.run.findings.find((f) => f.finding_id === id)).filter((f): f is Finding => !!f).sort((x, y) => SEVERITY_ORDER[x.severity] - SEVERITY_ORDER[y.severity])[0]
+  const ix = indexOf(ws)
+  const a = ix.action.get(v.action_id)!
+  const names = ix.names
+  const worst = v.finding_ids.map((id) => ix.finding.get(id)).filter((f): f is Finding => !!f).sort((x, y) => SEVERITY_ORDER[x.severity] - SEVERITY_ORDER[y.severity])[0]
   return {
     action_id: v.action_id,
     event_id: v.event_id,
@@ -50,13 +131,14 @@ export function chainRow(ws: Workspace, v: ActionVerification) {
 }
 
 export function chainDetail(ws: Workspace, v: ActionVerification) {
-  const a = ws.bundle.actions.find((x) => x.action_id === v.action_id)!
+  const ix = indexOf(ws)
+  const a = ix.action.get(v.action_id)!
   const ids = new Set<string>([a.actor_principal_id, v.chain.root_principal_id, ...v.chain.hops.flatMap((h) => [h.delegator_principal_id, h.delegatee_principal_id])].filter((x): x is string => !!x))
   return {
     row: chainRow(ws, v),
     action: a,
     verification: v,
-    findings: v.finding_ids.map((id) => ws.run.findings.find((f) => f.finding_id === id)).filter((f): f is Finding => !!f).map((f) => findingView(ws, f)),
+    findings: v.finding_ids.map((id) => ix.finding.get(id)).filter((f): f is Finding => !!f).map((f) => findingView(ws, f)),
     principals: ws.bundle.principals.filter((p) => ids.has(p.principal_id)),
     delegations: ws.bundle.delegations.filter((d) => v.chain.hops.some((h) => h.delegation_id === d.delegation_id)),
     execution_identity: ws.bundle.execution_identities.find((e) => e.execution_identity_id === a.execution_identity_id) ?? null,
@@ -89,11 +171,12 @@ export function overview(ws: Workspace) {
     buckets.set(hour, b)
   }
   const timeline = [...buckets.entries()].sort((x, y) => compareStrings(x[0], y[0])).map(([hour, v]) => ({ hour, ...v }))
-  const names = nameIndex(ws.bundle)
+  const ix = indexOf(ws)
+  const names = ix.names
   // Authority-risk distribution: worst finding severity per action.
   const risk: Record<Severity | 'none', number> = { critical: 0, high: 0, medium: 0, low: 0, info: 0, none: 0 }
   for (const a of actions) {
-    const sevs = a.finding_ids.map((id) => ws.run.findings.find((f) => f.finding_id === id)?.severity).filter((x): x is Severity => !!x)
+    const sevs = a.finding_ids.map((id) => ix.finding.get(id)?.severity).filter((x): x is Severity => !!x)
     const worst = sevs.sort((x, y) => SEVERITY_ORDER[x] - SEVERITY_ORDER[y])[0]
     risk[worst ?? 'none']++
   }

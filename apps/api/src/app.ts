@@ -32,12 +32,12 @@ import {
 import type { FindingStatus, RuleId } from '@regent/core'
 import type { Config } from './config.ts'
 import type { Db } from './db/driver.ts'
-import { createApiToken, createSession, destroySession, verifyPassword } from './auth.ts'
+import { createApiToken, createSession, destroySession, ROLE_RANK, verifyPassword } from './auth.ts'
 import type { Role } from './auth.ts'
 import { DEMO_ORG_ID, DEMO_PERSONAS } from './bootstrap.ts'
 import { openApiDocument } from './openapi.ts'
 import { investigationReportPdf, securityReportPdf } from './services/pdf.ts'
-import { chainDetail, chainRow, findingView, nameIndex, overview, search, statusOf } from './services/views.ts'
+import { chainDetail, chainRow, findingView, indexOf, nameIndex, overview, search, statusOf } from './services/views.ts'
 import type { WorkspaceService } from './services/workspace.ts'
 import type { Workspace } from './services/workspace.ts'
 import {
@@ -81,7 +81,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.use('/api/events', bodyLimit({ maxSize: Math.ceil(config.maxImportBytes * 1.1) + 4096, onError: tooLarge }))
   app.use('/api/events/*', bodyLimit({ maxSize: Math.ceil(config.maxImportBytes * 1.1) + 4096, onError: tooLarge }))
   app.use('/api/*', async (c, next) => (c.req.path.startsWith('/api/events') ? next() : bodyLimit({ maxSize: 256 * 1024, onError: tooLarge })(c, next)))
-  app.use('/api/*', authenticate(db))
+  app.use('/api/*', authenticate(db, config.demoMode))
   app.use('/api/*', csrf(config))
 
   app.onError((err, c) => {
@@ -92,6 +92,23 @@ export function createApp(deps: AppDeps): Hono<Env> {
     log('error', { request_id: requestId, operation: `${c.req.method} ${c.req.routePath}`, error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack?.split('\n').slice(0, 6).join(' | ') : undefined })
     return c.json({ error: { code: 'INTERNAL', message: 'REGENT could not complete the request. The error has been logged.', request_id: requestId } }, 500)
   })
+
+  // Failed sign-ins per account across all addresses: 20 per 15 minutes. Successes do not count.
+  const accountFailures = new Map<string, { count: number; reset: number }>()
+  const accountLimit = (email: string) => {
+    const a = accountFailures.get(email)
+    if (a && a.reset > Date.now() && a.count >= 20) throw new HttpError(429, 'RATE_LIMITED', 'Too many failed sign-ins for this account. Try again later.')
+  }
+  const accountFailed = (email: string) => {
+    const now = Date.now()
+    if (accountFailures.size > 50_000) for (const [k, v] of accountFailures) if (v.reset <= now) accountFailures.delete(k)
+    let a = accountFailures.get(email)
+    if (!a || a.reset <= now) {
+      a = { count: 0, reset: now + 15 * 60_000 }
+      accountFailures.set(email, a)
+    }
+    a.count++
+  }
 
   const audit = async (c: Context<Env>, action: string, target: string | null, detail: Record<string, unknown> = {}) => {
     const u = c.get('user')
@@ -153,10 +170,14 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   app.post('/api/auth/login', rateLimit('auth', 10, 60_000), async (c) => {
     const input = await body(c, z.object({ email: z.string().email().max(254), password: z.string().min(1).max(512) }))
+    accountLimit(input.email.toLowerCase())
     const [u] = await db.query<{ id: string; organization_id: string; password_hash: string | null }>('SELECT id, organization_id, password_hash FROM users WHERE email = $1', [input.email.toLowerCase()])
     // Same response and similar work whether the user exists or not.
     const ok = u?.password_hash ? await verifyPassword(input.password, u.password_hash) : (await verifyPassword(input.password, 'scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA==$AAAA'), false)
-    if (!u || !ok) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.')
+    if (!u || !ok) {
+      accountFailed(input.email.toLowerCase())
+      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.')
+    }
     const s = await issueSession(c, u.id, u.organization_id)
     c.set('user', { user_id: u.id, organization_id: u.organization_id, email: input.email, display_name: '', role: 'viewer', is_demo_persona: false, active_dataset_id: null, via: 'session', csrf_token: s.csrf })
     await audit(c, 'auth.login', u.id)
@@ -196,10 +217,34 @@ export function createApp(deps: AppDeps): Hono<Env> {
   })
 
   app.post('/api/tokens', requireRole('analyst'), async (c) => {
-    const input = await body(c, z.object({ name: z.string().min(1).max(80) }))
-    const t = await createApiToken(db, currentUser(c), input.name)
-    await audit(c, 'token.create', t.prefix, { name: input.name })
-    return c.json({ token: t.token, prefix: t.prefix, note: 'Shown once. Store it in a secret manager.' }, 201)
+    const u = currentUser(c)
+    if (u.is_demo_persona) throw new HttpError(403, 'DEMO_PERSONA', 'Demo personas cannot create API tokens. Sign in with a real account.')
+    const input = await body(c, z.object({ name: z.string().min(1).max(80), expires_in_days: z.number().int().min(1).max(365).default(90) }))
+    const t = await createApiToken(db, u, input.name, input.expires_in_days)
+    await audit(c, 'token.create', t.prefix, { name: input.name, expires_at: t.expires_at })
+    return c.json({ token: t.token, prefix: t.prefix, expires_at: t.expires_at, note: 'Shown once. Store it in a secret manager.' }, 201)
+  })
+
+  app.get('/api/tokens', requireRole('analyst'), async (c) => {
+    const u = currentUser(c)
+    // Admins see every token in the organization; others see their own.
+    const rows = await db.query(
+      `SELECT t.token_prefix, t.name, t.created_at, t.last_used_at, t.expires_at, t.revoked_at, u.email AS owner
+         FROM api_tokens t JOIN users u ON u.id = t.user_id
+        WHERE t.organization_id = $1 AND ($2 OR t.user_id = $3)
+        ORDER BY t.created_at DESC LIMIT 200`, [u.organization_id, u.role === 'admin', u.user_id])
+    return c.json({ tokens: rows })
+  })
+
+  app.delete('/api/tokens/:prefix', requireRole('analyst'), async (c) => {
+    const u = currentUser(c)
+    const rows = await db.query<{ token_prefix: string }>(
+      `UPDATE api_tokens SET revoked_at = now()
+        WHERE organization_id = $1 AND token_prefix = $2 AND revoked_at IS NULL AND ($3 OR user_id = $4)
+        RETURNING token_prefix`, [u.organization_id, c.req.param('prefix'), u.role === 'admin', u.user_id])
+    if (rows.length === 0) throw new HttpError(404, 'NOT_FOUND', 'No active token with that prefix that you can revoke.')
+    await audit(c, 'token.revoke', c.req.param('prefix'))
+    return c.json({ ok: true })
   })
 
   // ---------------------------------------------------------------- datasets
@@ -317,6 +362,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.get('/api/chains', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
     const q = c.req.query()
+    const ix = indexOf(ws)
     let rows = ws.run.actions.map((v) => chainRow(ws, v))
     const eq = (key: string, get: (r: (typeof rows)[number]) => string | null | undefined) => {
       const val = q[key]
@@ -331,7 +377,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
     if (q['attribution']) rows = rows.filter((r) => (q['attribution'] === 'attributable' ? r.root_principal_id !== null : r.root_principal_id === null))
     if (q['authority']) rows = rows.filter((r) => r.checks['authority'] === q['authority'])
     if (q['severity']) rows = rows.filter((r) => r.worst_severity === q['severity'])
-    if (q['policy']) rows = rows.filter((r) => ws.bundle.actions.find((a) => a.action_id === r.action_id)?.policy_id === q['policy'])
+    if (q['policy']) rows = rows.filter((r) => ix.action.get(r.action_id)?.policy_id === q['policy'])
     if (q['from']) rows = rows.filter((r) => (r.timestamp ?? '') >= q['from']!)
     if (q['to']) rows = rows.filter((r) => (r.timestamp ?? '') <= q['to']!)
     if (q['q']) {
@@ -352,7 +398,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.get('/api/chains/:id', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
     const id = c.req.param('id')
-    const v = ws.run.actions.find((a) => a.action_id === id || a.event_id === id)
+    const v = indexOf(ws).verification.get(id)
     if (!v) throw new HttpError(404, 'NOT_FOUND', `No action "${id}" in this dataset.`)
     return c.json(chainDetail(ws, v))
   })
@@ -393,22 +439,24 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   app.get('/api/findings/:id', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
-    const f = ws.run.findings.find((x) => x.finding_id === c.req.param('id'))
+    const ix = indexOf(ws)
+    const f = ix.finding.get(c.req.param('id'))
     if (!f) throw new HttpError(404, 'NOT_FOUND', 'Finding not found in the latest run of this dataset.')
-    const related = ws.run.actions.filter((a) => f.related_event_ids.includes(a.event_id)).map((v) => chainRow(ws, v))
+    // Capped: a finding shared by thousands of actions lists the first 200; the total is exact.
+    const related = f.related_event_ids.slice(0, 200).map((e) => ix.verification.get(e)).filter((v): v is NonNullable<typeof v> => !!v).map((v) => chainRow(ws, v))
     const evidence = f.evidence.map((e) => ({ ...e, record: evidenceRecord(ws, e.kind, e.id) }))
-    return c.json({ finding: findingView(ws, f), related_actions: related, evidence, names: Object.fromEntries(f.affected_principal_ids.map((id) => [id, nameIndex(ws.bundle).p(id)])) })
+    return c.json({ finding: findingView(ws, f), related_actions: related, related_total: f.related_event_ids.length, evidence, names: Object.fromEntries(f.affected_principal_ids.map((id) => [id, ix.names.p(id)])) })
   })
 
   app.patch('/api/findings/:id', requireRole('analyst'), async (c) => {
     const u = currentUser(c)
     const ws = await activeWorkspace(c)
     const input = await body(c, z.object({ status: z.enum(STATUSES), note: z.string().max(2000).nullable().optional() }))
-    const f = ws.run.findings.find((x) => x.finding_id === c.req.param('id'))
+    const f = indexOf(ws).finding.get(c.req.param('id'))
     if (!f) throw new HttpError(404, 'NOT_FOUND', 'Finding not found.')
     if ((input.status === 'SUPPRESSED' || input.status === 'ACCEPTED') && !input.note) throw new HttpError(400, 'NOTE_REQUIRED', 'Accepting or suppressing a finding requires a note explaining why.')
     await workspace.setFindingStatus(u.organization_id, ws.dataset.id, f.finding_id, input.status as FindingStatus, input.note ?? null, u.email)
-    await audit(c, 'finding.status', f.finding_id, { from: statusOf(ws, f.finding_id), to: input.status })
+    await audit(c, 'finding.status', f.finding_id, { dataset: ws.dataset.id, from: statusOf(ws, f.finding_id), to: input.status })
     return c.json({ ok: true })
   })
 
@@ -416,6 +464,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   app.get('/api/identities', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
+    const ix = indexOf(ws)
     const at = ws.bundle.actions.map((a) => a.timestamp).filter((x): x is string => !!x).sort().at(-1) ?? null
     const lastActivity = new Map<string, string>()
     for (const a of ws.bundle.actions) if (a.actor_principal_id && a.timestamp) lastActivity.set(a.actor_principal_id, a.timestamp)
@@ -435,11 +484,11 @@ export function createApp(deps: AppDeps): Hono<Env> {
       principals: ws.bundle.principals.map((p) => ({
         ...p,
         lifecycle: lifecycle(p.created_at, p.revoked_at, p.expires_at, p.suspended_at),
-        parents: ws.bundle.delegations.filter((d) => d.delegatee_principal_id === p.principal_id).map((d) => d.delegator_principal_id),
-        inbound_delegations: ws.bundle.delegations.filter((d) => d.delegatee_principal_id === p.principal_id).map((d) => d.delegation_id),
+        parents: (ix.delegationsByDelegatee.get(p.principal_id) ?? []).map((d) => d.delegator_principal_id),
+        inbound_delegations: (ix.delegationsByDelegatee.get(p.principal_id) ?? []).map((d) => d.delegation_id),
         execution_identities: ws.bundle.execution_identities.filter((e) => e.bound_principal_id === p.principal_id).map((e) => e.execution_identity_id),
         last_activity: lastActivity.get(p.principal_id) ?? null,
-        finding_count: ws.run.findings.filter((f) => f.affected_principal_ids.includes(p.principal_id)).length,
+        finding_count: (ix.findingsByPrincipal.get(p.principal_id) ?? []).length,
       })),
       unknown: [...referenced].filter((id) => !known.has(id)).sort().map((id) => ({ principal_id: id, lifecycle: 'UNKNOWN' })),
       execution_identities: ws.bundle.execution_identities.map((e) => ({ ...e, lifecycle: lifecycle(e.issued_at, e.revoked_at, e.expires_at, null) })),
@@ -453,27 +502,28 @@ export function createApp(deps: AppDeps): Hono<Env> {
     const ws = await activeWorkspace(c)
     const id = c.req.param('id')
     const p = ws.bundle.principals.find((x) => x.principal_id === id)
-    const actions = ws.run.actions.filter((a) => a.chain.actor_principal_id === id || a.chain.hops.some((h) => h.delegator_principal_id === id || h.delegatee_principal_id === id))
+    const ix = indexOf(ws)
+    const actions = (ix.actionsByPrincipal.get(id) ?? []).slice(0, 500)
     if (!p && actions.length === 0) throw new HttpError(404, 'NOT_FOUND', 'Identity not found.')
     return c.json({
       principal: p ?? null,
       known: !!p,
-      inbound: ws.bundle.delegations.filter((d) => d.delegatee_principal_id === id),
-      outbound: ws.bundle.delegations.filter((d) => d.delegator_principal_id === id),
+      inbound: ix.delegationsByDelegatee.get(id) ?? [],
+      outbound: ix.delegationsByDelegator.get(id) ?? [],
       execution_identities: ws.bundle.execution_identities.filter((e) => e.bound_principal_id === id),
       actions: actions.map((v) => chainRow(ws, v)),
-      findings: ws.run.findings.filter((f) => f.affected_principal_ids.includes(id)).map((f) => findingView(ws, f)),
+      findings: (ix.findingsByPrincipal.get(id) ?? []).map((f) => findingView(ws, f)),
     })
   })
 
   app.get('/api/delegations', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
-    const n = nameIndex(ws.bundle)
-    const ix = ws.run.actions
+    const wix = indexOf(ws)
+    const n = wix.names
     return c.json({
       delegations: ws.bundle.delegations.map((d) => {
-        const hop = ix.flatMap((a) => a.chain.hops).find((h) => h.delegation_id === d.delegation_id)
-        const findings = ws.run.findings.filter((f) => f.delegation_id === d.delegation_id)
+        const hop = wix.hopByDelegation.get(d.delegation_id)
+        const findings = (wix.findingsByDelegation.get(d.delegation_id) ?? []).filter((f) => f.delegation_id === d.delegation_id)
         return {
           ...d,
           delegator_name: d.delegator_principal_id ? n.p(d.delegator_principal_id) : null,
@@ -481,7 +531,8 @@ export function createApp(deps: AppDeps): Hono<Env> {
           available_scope: hop?.available_scope ?? null,
           effective_scope: hop?.effective_scope ?? null,
           amplified: hop?.amplified ?? [],
-          used_by: ix.filter((a) => a.chain.hops.some((h) => h.delegation_id === d.delegation_id)).map((a) => a.event_id),
+          used_by: (wix.actionsByDelegation.get(d.delegation_id) ?? []).slice(0, 100).map((a) => a.event_id),
+          used_by_total: (wix.actionsByDelegation.get(d.delegation_id) ?? []).length,
           finding_ids: findings.map((f) => f.finding_id),
           contract_integrity: findings.some((f) => f.severity === 'critical' || f.severity === 'high') ? 'VIOLATION' : findings.length > 0 ? 'WARN' : hop ? 'PASS' : 'UNVERIFIED',
         }
@@ -493,9 +544,10 @@ export function createApp(deps: AppDeps): Hono<Env> {
     const ws = await activeWorkspace(c)
     const d = ws.bundle.delegations.find((x) => x.delegation_id === c.req.param('id'))
     if (!d) throw new HttpError(404, 'NOT_FOUND', 'Delegation not found.')
-    const n = nameIndex(ws.bundle)
-    const hop = ws.run.actions.flatMap((a) => a.chain.hops).find((h) => h.delegation_id === d.delegation_id) ?? null
-    const findings = ws.run.findings.filter((f) => f.delegation_id === d.delegation_id || f.evidence.some((e) => e.kind === 'delegation' && e.id === d.delegation_id))
+    const ix = indexOf(ws)
+    const n = ix.names
+    const hop = ix.hopByDelegation.get(d.delegation_id) ?? null
+    const findings = ix.findingsByDelegation.get(d.delegation_id) ?? []
     const policy = ws.bundle.policies.find((p) => p.policy_id === d.policy_id && p.policy_version === d.policy_version) ?? null
     return c.json({
       delegation: d,
@@ -504,8 +556,8 @@ export function createApp(deps: AppDeps): Hono<Env> {
       hop,
       policy,
       parent: d.parent_delegation_id ? (ws.bundle.delegations.find((x) => x.delegation_id === d.parent_delegation_id) ?? null) : null,
-      children: ws.bundle.delegations.filter((x) => x.parent_delegation_id === d.delegation_id),
-      used_by: ws.run.actions.filter((a) => a.chain.hops.some((h) => h.delegation_id === d.delegation_id)).map((v) => chainRow(ws, v)),
+      children: ix.delegationsByParent.get(d.delegation_id) ?? [],
+      used_by: (ix.actionsByDelegation.get(d.delegation_id) ?? []).slice(0, 200).map((v) => chainRow(ws, v)),
       findings: findings.map((f) => findingView(ws, f)),
       contract_integrity: findings.some((f) => f.severity === 'critical' || f.severity === 'high') ? 'VIOLATION' : findings.length > 0 ? 'WARN' : hop ? 'PASS' : 'UNVERIFIED',
     })
@@ -513,19 +565,21 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   app.get('/api/credentials', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
-    const n = nameIndex(ws.bundle)
+    const ix = indexOf(ws)
+    const n = ix.names
     const lineage = ws.bundle.credentials.map((cr) => {
       const ex = ws.bundle.execution_identities.find((e) => e.execution_identity_id === cr.execution_identity_id) ?? null
-      const uses = ws.run.actions.filter((a) => ws.bundle.actions.find((x) => x.action_id === a.action_id)?.credential_id === cr.credential_id)
-      const findings = ws.run.findings.filter((f) => f.evidence.some((e) => e.kind === 'credential' && e.id === cr.credential_id))
+      const uses = ix.actionsByCredential.get(cr.credential_id) ?? []
+      const findings = ix.findingsByCredential.get(cr.credential_id) ?? []
       const actorIds = [...new Set(uses.map((u) => u.chain.actor_principal_id).filter((x): x is string => !!x))]
       return {
         credential: cr,
         execution_identity: ex,
         bound_principal: ex?.bound_principal_id ? { id: ex.bound_principal_id, name: n.p(ex.bound_principal_id) } : null,
-        lineage: ex?.bound_principal_id ? ws.run.actions.find((a) => a.chain.actor_principal_id === ex.bound_principal_id)?.chain.hops.map((h) => ({ id: h.delegator_principal_id, name: h.delegator_principal_id ? n.p(h.delegator_principal_id) : '?' })) ?? [] : [],
+        lineage: ex?.bound_principal_id ? ix.actionsByPrincipal.get(ex.bound_principal_id)?.find((a) => a.chain.actor_principal_id === ex.bound_principal_id)?.chain.hops.map((h) => ({ id: h.delegator_principal_id, name: h.delegator_principal_id ? n.p(h.delegator_principal_id) : '?' })) ?? [] : [],
         used_by_actors: actorIds.map((id) => ({ id, name: n.p(id), matches_binding: id === ex?.bound_principal_id })),
-        uses: uses.map((u) => ({ event_id: u.event_id, timestamp: u.timestamp, health: chainHealth(u) })),
+        uses: uses.slice(0, 200).map((u) => ({ event_id: u.event_id, timestamp: u.timestamp, health: chainHealth(u) })),
+        use_count: uses.length,
         conditions: [
           ...(ex ? [] : [cr.execution_identity_id ? 'BINDING_TO_UNKNOWN_IDENTITY' : 'NO_BINDING']),
           ...(ex && !ex.bound_principal_id ? ['NO_PARENT_LINEAGE'] : []),
@@ -568,11 +622,16 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.get('/api/policies', requireRole('viewer'), async (c) => {
     const ws = await activeWorkspace(c)
     return c.json({
-      policies: ws.bundle.policies.map((p) => ({
-        ...p,
-        decisions: ws.bundle.actions.filter((a) => a.policy_id === p.policy_id && a.policy_version === p.policy_version).length,
-        delegations: ws.bundle.delegations.filter((d) => d.policy_id === p.policy_id && d.policy_version === p.policy_version).length,
-      })),
+      policies: (() => {
+        const count = (list: { policy_id: string | null; policy_version: string | null }[]) => {
+          const m = new Map<string, number>()
+          for (const x of list) m.set(`${x.policy_id}@${x.policy_version}`, (m.get(`${x.policy_id}@${x.policy_version}`) ?? 0) + 1)
+          return m
+        }
+        const decisions = count(ws.bundle.actions)
+        const delegations = count(ws.bundle.delegations)
+        return ws.bundle.policies.map((p) => ({ ...p, decisions: decisions.get(`${p.policy_id}@${p.policy_version}`) ?? 0, delegations: delegations.get(`${p.policy_id}@${p.policy_version}`) ?? 0 }))
+      })(),
       unversioned_decisions: ws.bundle.actions.filter((a) => !a.policy_version).map((a) => a.event_id),
       completeness_schema: DEFAULT_COMPLETENESS_SCHEMA,
     })
@@ -583,7 +642,8 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.get('/api/scenarios', requireRole('viewer'), (c) =>
     c.json({ scenarios: SCENARIOS.map(({ records, ...s }) => ({ ...s, record_count: records.length })) }))
 
-  app.post('/api/scenarios', requireRole('viewer'), async (c) => {
+  // Loading a scenario creates a dataset and a run: analyst, like any other import.
+  app.post('/api/scenarios', requireRole('analyst'), async (c) => {
     const u = currentUser(c)
     const input = await body(c, z.object({ slug: z.string().min(1).max(64) }))
     const s = scenarioBySlug(input.slug)
@@ -598,7 +658,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   // ----------------------------------------------------------- chain builder
 
-  app.post('/api/builder/verify', requireRole('viewer'), rateLimit('builder', 120, 60_000), async (c) => {
+  app.post('/api/builder/verify', requireRole('viewer'), rateLimit('builder', 30, 60_000, 'user'), async (c) => {
     const spec = await body(c, ChainSpecSchema)
     const records = chainSpecToRecords(spec)
     const normalized = normalizeRecords(records)
@@ -645,8 +705,8 @@ export function createApp(deps: AppDeps): Hono<Env> {
     const lws = c.req.query('left_dataset') ? await workspace.workspace(u.organization_id, c.req.query('left_dataset')!) : await activeWorkspace(c)
     const rws = c.req.query('right_dataset') ? await workspace.workspace(u.organization_id, c.req.query('right_dataset')!) : await activeWorkspace(c)
     if (!lws || !rws) throw new HttpError(404, 'NOT_FOUND', 'Dataset not found.')
-    const lv = lws.run.actions.find((a) => a.action_id === left || a.event_id === left)
-    const rv = rws.run.actions.find((a) => a.action_id === right || a.event_id === right)
+    const lv = indexOf(lws).verification.get(left)
+    const rv = indexOf(rws).verification.get(right)
     if (!lv || !rv) throw new HttpError(404, 'NOT_FOUND', 'Action not found.')
     return c.json({ left: chainRow(lws, lv), right: chainRow(rws, rv), entries: diffChains({ bundle: lws.bundle, verification: lv }, { bundle: rws.bundle, verification: rv }) })
   })
@@ -725,8 +785,11 @@ export function createApp(deps: AppDeps): Hono<Env> {
   })
 
   app.get('/api/exports/:file', requireRole('viewer'), async (c) => {
-    const ws = await activeWorkspace(c)
     const file = c.req.param('file')
+    if (!['findings.json', 'findings.csv', 'events.json', 'events.csv'].includes(file)) throw new HttpError(404, 'NOT_FOUND', 'Unknown export.')
+    // Raw evidence is gated like the evidence package; findings are readable by any viewer.
+    if (file.startsWith('events.') && ROLE_RANK[currentUser(c).role] < ROLE_RANK['auditor']) throw new HttpError(403, 'FORBIDDEN', 'Evidence exports require the auditor role.')
+    const ws = await activeWorkspace(c)
     const statuses = new Map([...ws.statuses].map(([k, v]) => [k, v.status]))
     await audit(c, 'export', file, { dataset: ws.dataset.id })
     switch (file) {
@@ -777,7 +840,7 @@ function facets(ws: Workspace) {
 
 function evidenceRecord(ws: Workspace, kind: string, id: string): unknown {
   switch (kind) {
-    case 'action': return ws.bundle.actions.find((x) => x.action_id === id) ?? null
+    case 'action': return indexOf(ws).action.get(id) ?? null
     case 'delegation': return ws.bundle.delegations.find((x) => x.delegation_id === id) ?? null
     case 'principal': return ws.bundle.principals.find((x) => x.principal_id === id) ?? null
     case 'execution_identity': return ws.bundle.execution_identities.find((x) => x.execution_identity_id === id) ?? null
