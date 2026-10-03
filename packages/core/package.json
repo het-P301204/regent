@@ -1,0 +1,16 @@
+{
+  "name": "@regent/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REGENT verification engine: normalization, chain reconstruction, scope algebra, invariant verification and finding generation. No UI, no I/O.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}

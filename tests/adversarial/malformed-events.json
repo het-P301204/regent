@@ -1,0 +1,47 @@
+{
+  "description": "Records with wrong types, unknown record types, bad ids, non-ISO timestamps and prototype-pollution keys. Bad records are rejected at ingestion with a reason; the one well-formed event is kept, its unknown keys dropped, and it is unattributable.",
+  "expect": [
+    "MISSING_POLICY_VERSION",
+    "MISSING_REQUESTED_SCOPE",
+    "UNATTRIBUTABLE_ACTION",
+    "UNKNOWN_REFERENCE"
+  ],
+  "records": [
+    {
+      "record_type": "principal",
+      "principal_id": "human-x",
+      "principal_type": "root-admin"
+    },
+    {
+      "record_type": "shell",
+      "command": "rm -rf /"
+    },
+    {
+      "record_type": "action",
+      "event_id": "../../etc/passwd",
+      "actor_principal_id": "agent-x"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-badtime",
+      "timestamp": "yesterday",
+      "actor_principal_id": "agent-x",
+      "exercised_scope": "customer.read"
+    },
+    {
+      "event_id": "evt-proto",
+      "__proto__": {
+        "polluted": true
+      },
+      "constructor": {
+        "prototype": {
+          "polluted": true
+        }
+      },
+      "actor_principal_id": "agent-x",
+      "timestamp": "2026-10-03T09:00:00Z"
+    },
+    42,
+    null
+  ]
+}

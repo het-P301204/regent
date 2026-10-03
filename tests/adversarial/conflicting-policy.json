@@ -1,0 +1,136 @@
+{
+  "description": "The policy ceiling removes customer.write, which the chain conveyed; the action exercises it anyway.",
+  "expect": [
+    "SCOPE_VIOLATION"
+  ],
+  "records": [
+    {
+      "record_type": "principal",
+      "principal_id": "human-alice",
+      "principal_type": "human",
+      "display_name": "Alice Romero",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "customer.read",
+        "customer.write"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-research",
+      "principal_type": "agent",
+      "display_name": "ResearchAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-research-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-research",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-research-01",
+      "provisioned_scope": null,
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-research-01",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-research-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-customer-update",
+      "display_name": "CustomerUpdate",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-customer-db",
+      "display_name": "CustomerDB",
+      "kind": "database"
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "display_name": "Agent delegation policy",
+      "scope_ceiling": null,
+      "approval_required_for": []
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-read-only",
+      "policy_version": "2",
+      "display_name": "Read-only runtime",
+      "scope_ceiling": [
+        "customer.read"
+      ],
+      "approval_required_for": []
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-rw",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-alice",
+      "delegatee_principal_id": "agent-research",
+      "granted_scope": [
+        "customer.read",
+        "customer.write"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T09:00:00Z",
+      "expires_at": null,
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-rw"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-ceiling",
+      "timestamp": "2026-10-03T09:10:00Z",
+      "root_principal_id": "human-alice",
+      "actor_principal_id": "agent-research",
+      "parent_principal_id": null,
+      "delegation_id": "del-rw",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-research-01",
+      "credential_id": "svid-research-01",
+      "tool_id": "tool-customer-update",
+      "resource_id": "res-customer-db",
+      "operation": "update",
+      "parameters": null,
+      "requested_scope": [
+        "customer.write"
+      ],
+      "exercised_scope": [
+        "customer.write"
+      ],
+      "policy_id": "pol-read-only",
+      "policy_version": "2",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:10:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    }
+  ]
+}

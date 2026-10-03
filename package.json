@@ -1,0 +1,42 @@
+{
+  "name": "regent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REGENT reconstructs the authority chain behind AI-agent actions and verifies that delegated authority never silently expands.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "dev:api": "npm run dev -w @regent/api",
+    "dev:web": "npm run dev -w @regent/web",
+    "build": "npm run build -w @regent/web",
+    "start": "node apps/api/src/index.ts --production",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "regent": "node apps/cli/src/main.ts",
+    "scenarios:export": "node scripts/export-scenarios.ts",
+    "db:migrate": "node apps/api/src/db/migrate-cli.ts",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.6",
+    "globals": "^17.12.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
+  }
+}
