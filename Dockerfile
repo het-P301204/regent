@@ -33,7 +33,14 @@ COPY packages/core/package.json packages/core/
 COPY apps/api/package.json apps/api/
 COPY apps/cli/package.json apps/cli/
 COPY apps/web/package.json apps/web/
-RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
+# Install production dependencies, then remove the package managers: the server
+# never runs npm, and the npm bundled in the base image carries its own
+# vulnerable dependencies (undici, tar, ip-address, brace-expansion). Patch OS packages.
+RUN npm ci --omit=dev --no-audit --no-fund \
+ && npm cache clean --force \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+ && apk upgrade --no-cache
 COPY packages/core/src packages/core/src
 COPY apps/api/src apps/api/src
 COPY apps/cli apps/cli
