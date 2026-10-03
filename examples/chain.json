@@ -1,0 +1,23 @@
+{
+  "name": "Research assistant writes a customer record",
+  "principals": [
+    { "id": "human-alice", "type": "human", "name": "Alice", "scope": ["customer.read", "customer.write"] },
+    { "id": "agent-research", "type": "agent", "name": "ResearchAgent" },
+    { "id": "agent-customer", "type": "sub_agent", "name": "CustomerAgent" }
+  ],
+  "delegations": [
+    { "from": "human-alice", "to": "agent-research", "granted": ["customer.read"] },
+    { "from": "agent-research", "to": "agent-customer", "granted": ["customer.read"] }
+  ],
+  "actions": [
+    {
+      "actor": "agent-customer",
+      "tool": "CustomerSearch",
+      "resource": "CustomerDB",
+      "operation": "update",
+      "requested": ["customer.read"],
+      "exercised": ["customer.read", "customer.write"],
+      "execution_identity": { "id": "workload-042", "bound_to": "agent-customer", "standing_scope": ["customer.read", "customer.write"] }
+    }
+  ]
+}

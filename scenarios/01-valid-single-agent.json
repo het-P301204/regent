@@ -1,0 +1,188 @@
+{
+  "slug": "valid-single-agent",
+  "number": 1,
+  "title": "Valid single-agent delegation",
+  "summary": "Alice delegates read-only customer access to ResearchAgent, which reads one customer record.",
+  "teaches": "What a fully attributable, contained chain looks like: every check passes and the derived decision matches the recorded one.",
+  "focus_event": "evt-s1-read",
+  "expected": [],
+  "records": [
+    {
+      "record_type": "principal",
+      "principal_id": "human-alice",
+      "principal_type": "human",
+      "display_name": "Alice Romero",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "customer.read",
+        "customer.write",
+        "invoice.read",
+        "invoice.write",
+        "invoice.approve"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-research",
+      "principal_type": "agent",
+      "display_name": "ResearchAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-customer",
+      "principal_type": "sub_agent",
+      "display_name": "CustomerAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-research-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-research",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-research-01",
+      "provisioned_scope": [
+        "customer.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-customer-02",
+      "kind": "workload",
+      "bound_principal_id": "agent-customer",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-customer-02",
+      "provisioned_scope": [
+        "customer.read",
+        "customer.write"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-research-01",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-research-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-customer-02",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-customer-02",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-customer-search",
+      "display_name": "CustomerSearch",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-customer-update",
+      "display_name": "CustomerUpdate",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-customer-db",
+      "display_name": "CustomerDB",
+      "kind": "database"
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "display_name": "Agent delegation policy",
+      "scope_ceiling": null,
+      "approval_required_for": []
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-agent-runtime",
+      "policy_version": "7",
+      "display_name": "Agent runtime policy",
+      "scope_ceiling": null,
+      "approval_required_for": [
+        "customer.delete",
+        "invoice.approve"
+      ]
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-alice-research",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-alice",
+      "delegatee_principal_id": "agent-research",
+      "granted_scope": [
+        "customer.read"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T09:00:00Z",
+      "expires_at": "2026-10-03T18:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-alice-research"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-s1-read",
+      "timestamp": "2026-10-03T09:12:00Z",
+      "root_principal_id": "human-alice",
+      "actor_principal_id": "agent-research",
+      "parent_principal_id": null,
+      "delegation_id": "del-alice-research",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-research-01",
+      "credential_id": "svid-research-01",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "customer_id": "cus-1042"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-agent-runtime",
+      "policy_version": "7",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    }
+  ]
+}

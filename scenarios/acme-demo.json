@@ -1,0 +1,1996 @@
+{
+  "description": "Acme AI Operations demo environment (synthetic).",
+  "records": [
+    {
+      "record_type": "principal",
+      "principal_id": "human-maya",
+      "principal_type": "human",
+      "display_name": "Maya Chen",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "invoice.read",
+        "invoice.write",
+        "invoice.approve",
+        "ledger.read",
+        "ledger.write",
+        "report.export"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "human-daniel",
+      "principal_type": "human",
+      "display_name": "Daniel Okafor",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "customer.read",
+        "customer.write",
+        "ticket.read",
+        "ticket.write",
+        "email.draft"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "human-priya",
+      "principal_type": "human",
+      "display_name": "Priya Nair",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "incident.read",
+        "incident.write",
+        "log.read",
+        "ticket.read"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "human-tom",
+      "principal_type": "human",
+      "display_name": "Tom Becker",
+      "issuer": "https://idp.example.test",
+      "provisioned_scope": [
+        "crm.read",
+        "crm.write",
+        "report.export"
+      ],
+      "created_at": "2026-01-05T09:00:00Z",
+      "revoked_at": "2026-10-03T13:00:00Z",
+      "status": "REVOKED"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-ops",
+      "principal_type": "agent",
+      "display_name": "OperationsAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-invoice",
+      "principal_type": "sub_agent",
+      "display_name": "InvoiceAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-recon",
+      "principal_type": "sub_agent",
+      "display_name": "ReconciliationAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-report",
+      "principal_type": "sub_agent",
+      "display_name": "ReportingAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-support",
+      "principal_type": "agent",
+      "display_name": "SupportAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-lookup",
+      "principal_type": "sub_agent",
+      "display_name": "CustomerLookupAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-reply",
+      "principal_type": "sub_agent",
+      "display_name": "ReplyDraftAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-triage",
+      "principal_type": "agent",
+      "display_name": "TriageAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-forecast",
+      "principal_type": "agent",
+      "display_name": "ForecastAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "principal",
+      "principal_id": "agent-sync",
+      "principal_type": "agent",
+      "display_name": "NightlySyncAgent",
+      "issuer": "https://agents.example.test",
+      "provisioned_scope": null,
+      "root_eligible": false,
+      "created_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-ops-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-ops",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-ops-01",
+      "provisioned_scope": [
+        "invoice.read",
+        "ledger.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-invoice-07",
+      "kind": "workload",
+      "bound_principal_id": "agent-invoice",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-invoice-07",
+      "provisioned_scope": [
+        "invoice.read",
+        "invoice.write",
+        "invoice.approve"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-recon-04",
+      "kind": "workload",
+      "bound_principal_id": "agent-recon",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-recon-04",
+      "provisioned_scope": [
+        "ledger.read",
+        "ledger.write"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-report-02",
+      "kind": "workload",
+      "bound_principal_id": "agent-report",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-report-02",
+      "provisioned_scope": [
+        "invoice.read",
+        "ledger.read",
+        "report.export"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-support-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-support",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-support-01",
+      "provisioned_scope": [
+        "customer.read",
+        "ticket.read",
+        "ticket.write"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-lookup-05",
+      "kind": "workload",
+      "bound_principal_id": "agent-lookup",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-lookup-05",
+      "provisioned_scope": [
+        "customer.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-reply-03",
+      "kind": "workload",
+      "bound_principal_id": "agent-reply",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-reply-03",
+      "provisioned_scope": [
+        "email.draft",
+        "ticket.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-triage-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-triage",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-triage-01",
+      "provisioned_scope": [
+        "incident.read",
+        "log.read",
+        "ticket.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-forecast-01",
+      "kind": "workload",
+      "bound_principal_id": "agent-forecast",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-forecast-01",
+      "provisioned_scope": [
+        "crm.read",
+        "report.export"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-sync-09",
+      "kind": "workload",
+      "bound_principal_id": "agent-sync",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-sync-09",
+      "provisioned_scope": [
+        "crm.read",
+        "customer.read",
+        "customer.write"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "execution_identity",
+      "execution_identity_id": "wl-shared-batch",
+      "kind": "workload",
+      "bound_principal_id": "agent-sync",
+      "spiffe_id": "spiffe://acme.example.test/workload/wl-shared-batch",
+      "provisioned_scope": [
+        "ledger.read",
+        "ledger.write",
+        "invoice.read"
+      ],
+      "issued_at": "2026-06-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-ops-01",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-ops-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-invoice-07",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-invoice-07",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-recon-04",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-recon-04",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-report-02",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-report-02",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-support-01",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-support-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-lookup-05",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-lookup-05",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": "2026-10-03T15:30:00Z",
+      "status": "REVOKED"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-reply-03",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-reply-03",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-triage-01",
+      "credential_type": "spiffe_svid",
+      "execution_identity_id": "wl-triage-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-forecast-01",
+      "credential_type": "oauth_access_token",
+      "execution_identity_id": "wl-forecast-01",
+      "issued_at": "2026-10-03T00:00:00Z",
+      "expires_at": "2026-10-04T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "svid-sync-09",
+      "credential_type": "api_key",
+      "execution_identity_id": "wl-sync-09",
+      "issued_at": "2026-09-01T00:00:00Z",
+      "expires_at": "2026-12-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "credential",
+      "credential_id": "tok-batch-legacy",
+      "credential_type": "service_credential",
+      "execution_identity_id": "wl-shared-batch",
+      "issued_at": "2026-08-01T00:00:00Z",
+      "expires_at": "2027-08-01T00:00:00Z",
+      "revoked_at": null,
+      "status": "ACTIVE"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-invoice-lookup",
+      "display_name": "InvoiceLookup",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-invoice-approve",
+      "display_name": "InvoiceApprove",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-ledger-query",
+      "display_name": "LedgerQuery",
+      "kind": "connector"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-ledger-post",
+      "display_name": "LedgerPost",
+      "kind": "connector"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-report-export",
+      "display_name": "ReportExport",
+      "kind": "api"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-customer-search",
+      "display_name": "CustomerSearch",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-ticket-update",
+      "display_name": "TicketUpdate",
+      "kind": "api"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-email-draft",
+      "display_name": "EmailDraft",
+      "kind": "function"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-log-search",
+      "display_name": "LogSearch",
+      "kind": "mcp"
+    },
+    {
+      "record_type": "tool",
+      "tool_id": "tool-crm-query",
+      "display_name": "CRMQuery",
+      "kind": "api"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-invoice-db",
+      "display_name": "InvoiceDB",
+      "kind": "database"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-ledger-db",
+      "display_name": "LedgerDB",
+      "kind": "database"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-customer-db",
+      "display_name": "CustomerDB",
+      "kind": "database"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-ticket-system",
+      "display_name": "TicketSystem",
+      "kind": "application"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-report-bucket",
+      "display_name": "ReportBucket",
+      "kind": "object"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-log-store",
+      "display_name": "LogStore",
+      "kind": "service"
+    },
+    {
+      "record_type": "resource",
+      "resource_id": "res-crm",
+      "display_name": "CRM",
+      "kind": "application"
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "display_name": "Agent delegation policy",
+      "scope_ceiling": null,
+      "approval_required_for": []
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "display_name": "Finance agent runtime",
+      "scope_ceiling": [
+        "invoice.read",
+        "invoice.write",
+        "invoice.approve",
+        "ledger.read",
+        "ledger.write",
+        "report.export"
+      ],
+      "approval_required_for": [
+        "invoice.approve",
+        "ledger.write"
+      ]
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "display_name": "Support agent runtime",
+      "scope_ceiling": [
+        "customer.read",
+        "ticket.read",
+        "ticket.write",
+        "email.draft"
+      ],
+      "approval_required_for": []
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "display_name": "Security agent runtime",
+      "scope_ceiling": null,
+      "approval_required_for": []
+    },
+    {
+      "record_type": "policy",
+      "policy_id": "pol-agent-runtime",
+      "policy_version": "7",
+      "display_name": "General agent runtime",
+      "scope_ceiling": null,
+      "approval_required_for": [
+        "customer.write"
+      ]
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-maya-ops",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-maya",
+      "delegatee_principal_id": "agent-ops",
+      "granted_scope": [
+        "invoice.read",
+        "invoice.write",
+        "invoice.approve",
+        "ledger.read",
+        "report.export"
+      ],
+      "requested_scope": null,
+      "restrictions": [
+        "business-hours"
+      ],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:00:00Z",
+      "expires_at": "2026-10-03T20:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0001"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-ops-invoice",
+      "parent_delegation_id": "del-maya-ops",
+      "root_principal_id": null,
+      "delegator_principal_id": "agent-ops",
+      "delegatee_principal_id": "agent-invoice",
+      "granted_scope": [
+        "invoice.read",
+        "invoice.approve"
+      ],
+      "requested_scope": null,
+      "restrictions": [
+        "invoice.amount<=25000"
+      ],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:02:00Z",
+      "expires_at": "2026-10-03T18:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0002"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-ops-recon",
+      "parent_delegation_id": "del-maya-ops",
+      "root_principal_id": null,
+      "delegator_principal_id": "agent-ops",
+      "delegatee_principal_id": "agent-recon",
+      "granted_scope": [
+        "ledger.read"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:03:00Z",
+      "expires_at": "2026-10-03T18:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0003"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-ops-report",
+      "parent_delegation_id": "del-maya-ops",
+      "root_principal_id": null,
+      "delegator_principal_id": "agent-ops",
+      "delegatee_principal_id": "agent-report",
+      "granted_scope": [
+        "invoice.read",
+        "ledger.read",
+        "report.export"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:04:00Z",
+      "expires_at": "2026-10-03T12:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0004"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-daniel-support",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-daniel",
+      "delegatee_principal_id": "agent-support",
+      "granted_scope": [
+        "customer.read",
+        "ticket.read",
+        "ticket.write",
+        "email.draft"
+      ],
+      "requested_scope": null,
+      "restrictions": [
+        "customer-region=EU"
+      ],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:30:00Z",
+      "expires_at": "2026-10-03T19:00:00Z",
+      "revoked_at": "2026-10-03T14:00:00Z",
+      "approval_state": "APPROVED",
+      "status": "REVOKED",
+      "event_id": "evt-del-0005"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-support-lookup",
+      "parent_delegation_id": "del-daniel-support",
+      "root_principal_id": null,
+      "delegator_principal_id": "agent-support",
+      "delegatee_principal_id": "agent-lookup",
+      "granted_scope": [
+        "customer.read"
+      ],
+      "requested_scope": null,
+      "restrictions": [
+        "read-only",
+        "customer-region=EU"
+      ],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:31:00Z",
+      "expires_at": "2026-10-03T19:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0006"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-support-reply",
+      "parent_delegation_id": "del-daniel-support",
+      "root_principal_id": null,
+      "delegator_principal_id": "agent-support",
+      "delegatee_principal_id": "agent-reply",
+      "granted_scope": [
+        "email.draft",
+        "ticket.read",
+        "customer.write"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": "4",
+      "created_at": "2026-10-03T08:32:00Z",
+      "expires_at": "2026-10-03T19:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0007"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-priya-triage",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-priya",
+      "delegatee_principal_id": "agent-triage",
+      "granted_scope": [
+        "incident.read",
+        "log.read",
+        "ticket.read"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "created_at": "2026-10-03T09:00:00Z",
+      "expires_at": "2026-10-03T21:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0008"
+    },
+    {
+      "record_type": "delegation",
+      "delegation_id": "del-tom-forecast",
+      "parent_delegation_id": null,
+      "root_principal_id": null,
+      "delegator_principal_id": "human-tom",
+      "delegatee_principal_id": "agent-forecast",
+      "granted_scope": [
+        "crm.read",
+        "report.export"
+      ],
+      "requested_scope": null,
+      "restrictions": [],
+      "policy_id": "pol-agent-delegation",
+      "policy_version": null,
+      "created_at": "2026-10-03T09:15:00Z",
+      "expires_at": "2026-10-10T00:00:00Z",
+      "revoked_at": null,
+      "approval_state": "APPROVED",
+      "status": "ACTIVE",
+      "event_id": "evt-del-0009"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0001",
+      "timestamp": "2026-10-03T09:05:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88201"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:05:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0002",
+      "timestamp": "2026-10-03T09:35:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88207"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:35:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0003",
+      "timestamp": "2026-10-03T10:05:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88213"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:05:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0004",
+      "timestamp": "2026-10-03T10:35:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88219"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:35:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0005",
+      "timestamp": "2026-10-03T11:05:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88226"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:05:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0006",
+      "timestamp": "2026-10-03T11:35:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-lookup",
+      "resource_id": "res-invoice-db",
+      "operation": "read",
+      "parameters": {
+        "invoice_id": "inv-88231"
+      },
+      "requested_scope": [
+        "invoice.read"
+      ],
+      "exercised_scope": [
+        "invoice.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:35:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0007",
+      "timestamp": "2026-10-03T10:42:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-approve",
+      "resource_id": "res-invoice-db",
+      "operation": "approve",
+      "parameters": {
+        "invoice_id": "inv-88213",
+        "amount_eur": 18400
+      },
+      "requested_scope": [
+        "invoice.approve"
+      ],
+      "exercised_scope": [
+        "invoice.approve"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:42:00Z",
+      "approval_state": "APPROVED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0008",
+      "timestamp": "2026-10-03T11:18:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-invoice",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-invoice",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-invoice-07",
+      "credential_id": "svid-invoice-07",
+      "tool_id": "tool-invoice-approve",
+      "resource_id": "res-invoice-db",
+      "operation": "approve",
+      "parameters": {
+        "invoice_id": "inv-88226",
+        "amount_eur": 24950
+      },
+      "requested_scope": [
+        "invoice.approve"
+      ],
+      "exercised_scope": [
+        "invoice.approve"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:18:00Z",
+      "approval_state": "PENDING",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0009",
+      "timestamp": "2026-10-03T09:20:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-recon",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-recon",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-recon-04",
+      "credential_id": "svid-recon-04",
+      "tool_id": "tool-ledger-query",
+      "resource_id": "res-ledger-db",
+      "operation": "read",
+      "parameters": {
+        "period": "2026-09",
+        "batch": 1
+      },
+      "requested_scope": [
+        "ledger.read"
+      ],
+      "exercised_scope": [
+        "ledger.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0010",
+      "timestamp": "2026-10-03T10:20:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-recon",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-recon",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-recon-04",
+      "credential_id": "svid-recon-04",
+      "tool_id": "tool-ledger-query",
+      "resource_id": "res-ledger-db",
+      "operation": "read",
+      "parameters": {
+        "period": "2026-09",
+        "batch": 2
+      },
+      "requested_scope": [
+        "ledger.read"
+      ],
+      "exercised_scope": [
+        "ledger.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0011",
+      "timestamp": "2026-10-03T11:20:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-recon",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-recon",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-recon-04",
+      "credential_id": "svid-recon-04",
+      "tool_id": "tool-ledger-query",
+      "resource_id": "res-ledger-db",
+      "operation": "read",
+      "parameters": {
+        "period": "2026-09",
+        "batch": 3
+      },
+      "requested_scope": [
+        "ledger.read"
+      ],
+      "exercised_scope": [
+        "ledger.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0042",
+      "timestamp": "2026-10-03T11:47:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-recon",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-recon",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-recon-04",
+      "credential_id": "svid-recon-04",
+      "tool_id": "tool-ledger-post",
+      "resource_id": "res-ledger-db",
+      "operation": "write",
+      "parameters": {
+        "journal": "JE-2026-0931",
+        "lines": 14
+      },
+      "requested_scope": [
+        "ledger.read",
+        "ledger.write"
+      ],
+      "exercised_scope": [
+        "ledger.read",
+        "ledger.write"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "tool default credentials",
+      "authorization_evaluated_at": "2026-10-03T11:47:00Z",
+      "approval_state": "APPROVED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0012",
+      "timestamp": "2026-10-03T09:50:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-report",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-report",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-report-02",
+      "credential_id": "svid-report-02",
+      "tool_id": "tool-report-export",
+      "resource_id": "res-report-bucket",
+      "operation": "export",
+      "parameters": {
+        "report": "ap-aging-weekly"
+      },
+      "requested_scope": [
+        "invoice.read",
+        "report.export"
+      ],
+      "exercised_scope": [
+        "invoice.read",
+        "report.export"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:50:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0013",
+      "timestamp": "2026-10-03T13:10:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-report",
+      "parent_principal_id": "agent-ops",
+      "delegation_id": "del-ops-report",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-report-02",
+      "credential_id": "svid-report-02",
+      "tool_id": "tool-report-export",
+      "resource_id": "res-report-bucket",
+      "operation": "export",
+      "parameters": {
+        "report": "gl-trial-balance"
+      },
+      "requested_scope": [
+        "ledger.read",
+        "report.export"
+      ],
+      "exercised_scope": [
+        "ledger.read",
+        "report.export"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T13:10:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0014",
+      "timestamp": "2026-10-03T12:30:00Z",
+      "root_principal_id": "human-maya",
+      "actor_principal_id": "agent-ops",
+      "parent_principal_id": null,
+      "delegation_id": "del-maya-ops",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-shared-batch",
+      "credential_id": "tok-batch-legacy",
+      "tool_id": "tool-ledger-query",
+      "resource_id": "res-ledger-db",
+      "operation": "read",
+      "parameters": {
+        "query": "open-items"
+      },
+      "requested_scope": [
+        "ledger.read"
+      ],
+      "exercised_scope": [
+        "ledger.read"
+      ],
+      "policy_id": "pol-finance-agents",
+      "policy_version": "12",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T12:30:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0015",
+      "timestamp": "2026-10-03T09:12:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4410"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0016",
+      "timestamp": "2026-10-03T09:20:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4410",
+        "status": "pending-customer"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0017",
+      "timestamp": "2026-10-03T10:12:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4413"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0018",
+      "timestamp": "2026-10-03T10:20:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4413",
+        "status": "pending-customer"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0019",
+      "timestamp": "2026-10-03T11:12:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4417"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0020",
+      "timestamp": "2026-10-03T11:20:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4417",
+        "status": "pending-customer"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0021",
+      "timestamp": "2026-10-03T12:12:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4421"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T12:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0022",
+      "timestamp": "2026-10-03T12:20:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4421",
+        "status": "pending-customer"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T12:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0023",
+      "timestamp": "2026-10-03T13:12:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4429"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T13:12:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0024",
+      "timestamp": "2026-10-03T13:20:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4429",
+        "status": "pending-customer"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T13:20:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0025",
+      "timestamp": "2026-10-03T10:45:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-reply",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-reply",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-reply-03",
+      "credential_id": "svid-reply-03",
+      "tool_id": "tool-email-draft",
+      "resource_id": "res-ticket-system",
+      "operation": "draft",
+      "parameters": {
+        "ticket": "TCK-4413"
+      },
+      "requested_scope": [
+        "email.draft"
+      ],
+      "exercised_scope": [
+        "email.draft"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:45:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0901",
+      "timestamp": "2026-10-03T14:40:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-support",
+      "parent_principal_id": null,
+      "delegation_id": "del-daniel-support",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-support-01",
+      "credential_id": "svid-support-01",
+      "tool_id": "tool-ticket-update",
+      "resource_id": "res-ticket-system",
+      "operation": "update",
+      "parameters": {
+        "ticket": "TCK-4433",
+        "status": "closed"
+      },
+      "requested_scope": [
+        "ticket.write"
+      ],
+      "exercised_scope": [
+        "ticket.write"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "session grant cache",
+      "authorization_evaluated_at": "2026-10-03T13:30:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0026",
+      "timestamp": "2026-10-03T14:55:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4433"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "DENY",
+      "decision_reason": "upstream delegation revoked",
+      "authorization_evaluated_at": "2026-10-03T14:55:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "failure"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0027",
+      "timestamp": "2026-10-03T15:45:00Z",
+      "root_principal_id": "human-daniel",
+      "actor_principal_id": "agent-lookup",
+      "parent_principal_id": "agent-support",
+      "delegation_id": "del-support-lookup",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-lookup-05",
+      "credential_id": "svid-lookup-05",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "read",
+      "parameters": {
+        "ticket": "TCK-4440"
+      },
+      "requested_scope": [
+        "customer.read"
+      ],
+      "exercised_scope": [
+        "customer.read"
+      ],
+      "policy_id": "pol-support-agents",
+      "policy_version": "5",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T15:45:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0028",
+      "timestamp": "2026-10-03T09:30:00Z",
+      "root_principal_id": "human-priya",
+      "actor_principal_id": "agent-triage",
+      "parent_principal_id": null,
+      "delegation_id": "del-priya-triage",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-triage-01",
+      "credential_id": "svid-triage-01",
+      "tool_id": "tool-log-search",
+      "resource_id": "res-log-store",
+      "operation": "search",
+      "parameters": {
+        "incident": "INC-2031",
+        "window": "1h"
+      },
+      "requested_scope": [
+        "log.read"
+      ],
+      "exercised_scope": [
+        "log.read"
+      ],
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T09:30:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0029",
+      "timestamp": "2026-10-03T11:00:00Z",
+      "root_principal_id": "human-priya",
+      "actor_principal_id": "agent-triage",
+      "parent_principal_id": null,
+      "delegation_id": "del-priya-triage",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-triage-01",
+      "credential_id": "svid-triage-01",
+      "tool_id": "tool-log-search",
+      "resource_id": "res-log-store",
+      "operation": "search",
+      "parameters": {
+        "incident": "INC-2032",
+        "window": "1h"
+      },
+      "requested_scope": [
+        "log.read"
+      ],
+      "exercised_scope": [
+        "log.read"
+      ],
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T11:00:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0030",
+      "timestamp": "2026-10-03T13:30:00Z",
+      "root_principal_id": "human-priya",
+      "actor_principal_id": "agent-triage",
+      "parent_principal_id": null,
+      "delegation_id": "del-priya-triage",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-triage-01",
+      "credential_id": "svid-triage-01",
+      "tool_id": "tool-log-search",
+      "resource_id": "res-log-store",
+      "operation": "search",
+      "parameters": {
+        "incident": "INC-2033",
+        "window": "1h"
+      },
+      "requested_scope": [
+        "log.read"
+      ],
+      "exercised_scope": [
+        "log.read"
+      ],
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T13:30:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0031",
+      "timestamp": "2026-10-03T16:10:00Z",
+      "root_principal_id": "human-priya",
+      "actor_principal_id": "agent-triage",
+      "parent_principal_id": null,
+      "delegation_id": "del-priya-triage",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-triage-01",
+      "credential_id": "svid-triage-01",
+      "tool_id": "tool-log-search",
+      "resource_id": "res-log-store",
+      "operation": "search",
+      "parameters": {
+        "incident": "INC-2034",
+        "window": "1h"
+      },
+      "requested_scope": [
+        "log.read"
+      ],
+      "exercised_scope": [
+        "log.read"
+      ],
+      "policy_id": "pol-security-agents",
+      "policy_version": "3",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T16:10:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0032",
+      "timestamp": "2026-10-03T10:05:00Z",
+      "root_principal_id": "human-tom",
+      "actor_principal_id": "agent-forecast",
+      "parent_principal_id": null,
+      "delegation_id": "del-tom-forecast",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-forecast-01",
+      "credential_id": "svid-forecast-01",
+      "tool_id": "tool-crm-query",
+      "resource_id": "res-crm",
+      "operation": "read",
+      "parameters": {
+        "pipeline": "q4"
+      },
+      "requested_scope": [
+        "crm.read"
+      ],
+      "exercised_scope": [
+        "crm.read"
+      ],
+      "policy_id": "pol-agent-runtime",
+      "policy_version": "7",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T10:05:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0033",
+      "timestamp": "2026-10-03T16:30:00Z",
+      "root_principal_id": "human-tom",
+      "actor_principal_id": "agent-forecast",
+      "parent_principal_id": null,
+      "delegation_id": "del-tom-forecast",
+      "parent_event_id": null,
+      "execution_identity_id": "wl-forecast-01",
+      "credential_id": "svid-forecast-01",
+      "tool_id": "tool-report-export",
+      "resource_id": "res-report-bucket",
+      "operation": "export",
+      "parameters": {
+        "report": "q4-forecast"
+      },
+      "requested_scope": [
+        "report.export"
+      ],
+      "exercised_scope": [
+        "report.export"
+      ],
+      "policy_id": "pol-agent-runtime",
+      "policy_version": "7",
+      "recorded_decision": "ALLOW",
+      "decision_reason": "requested scope within delegated scope",
+      "authorization_evaluated_at": "2026-10-03T16:30:00Z",
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0034",
+      "timestamp": "2026-10-03T02:15:00Z",
+      "root_principal_id": null,
+      "actor_principal_id": "agent-sync",
+      "parent_principal_id": null,
+      "delegation_id": null,
+      "parent_event_id": null,
+      "execution_identity_id": "wl-sync-09",
+      "credential_id": "svid-sync-09",
+      "tool_id": "tool-crm-query",
+      "resource_id": "res-crm",
+      "operation": "read",
+      "parameters": {
+        "mode": "incremental"
+      },
+      "requested_scope": null,
+      "exercised_scope": [
+        "crm.read"
+      ],
+      "policy_id": "pol-agent-runtime",
+      "policy_version": null,
+      "recorded_decision": "ALLOW",
+      "decision_reason": null,
+      "authorization_evaluated_at": null,
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    },
+    {
+      "record_type": "action",
+      "event_id": "evt-0035",
+      "timestamp": "2026-10-03T02:16:00Z",
+      "root_principal_id": null,
+      "actor_principal_id": "agent-sync",
+      "parent_principal_id": null,
+      "delegation_id": null,
+      "parent_event_id": null,
+      "execution_identity_id": "wl-sync-09",
+      "credential_id": "svid-sync-09",
+      "tool_id": "tool-customer-search",
+      "resource_id": "res-customer-db",
+      "operation": "write",
+      "parameters": {
+        "mode": "incremental",
+        "records": 412
+      },
+      "requested_scope": null,
+      "exercised_scope": [
+        "customer.write"
+      ],
+      "policy_id": "pol-agent-runtime",
+      "policy_version": null,
+      "recorded_decision": "ALLOW",
+      "decision_reason": null,
+      "authorization_evaluated_at": null,
+      "approval_state": "NOT_REQUIRED",
+      "downstream_result": "success"
+    }
+  ]
+}

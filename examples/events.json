@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": "evt-001",
+    "timestamp": "2026-10-03T10:30:00Z",
+    "delegated_user": "user-001",
+    "agent_id": "agent-001",
+    "parent_agent": null,
+    "tool": "customer-search",
+    "resource": "customer-db",
+    "action": "read",
+    "requested_scope": ["customer.read"],
+    "exercised_scope": ["customer.read"],
+    "policy_version": "policy-4",
+    "decision": "allow"
+  }
+]
