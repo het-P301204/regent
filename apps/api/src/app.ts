@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, normalize, sep } from 'node:path'
 import { Hono } from 'hono'
 import type { Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { z } from 'zod'
 import {
@@ -37,7 +38,7 @@ import { DEMO_ORG_ID, DEMO_PERSONAS } from './bootstrap.ts'
 import { openApiDocument } from './openapi.ts'
 import { investigationReportPdf, securityReportPdf } from './services/pdf.ts'
 import { chainDetail, chainRow, findingView, nameIndex, overview, search, statusOf } from './services/views.ts'
-import { WorkspaceService } from './services/workspace.ts'
+import type { WorkspaceService } from './services/workspace.ts'
 import type { Workspace } from './services/workspace.ts'
 import {
   authenticate,
@@ -73,6 +74,13 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.use('*', secureHeaders(config))
   app.use('/api/*', cors(config))
   app.use('/api/*', rateLimit('api', 600, 60_000))
+  // Enforced while streaming, so a chunked body without Content-Length cannot bypass it.
+  const tooLarge = () => {
+    throw new HttpError(413, 'TOO_LARGE', 'The request body is too large.')
+  }
+  app.use('/api/events', bodyLimit({ maxSize: Math.ceil(config.maxImportBytes * 1.1) + 4096, onError: tooLarge }))
+  app.use('/api/events/*', bodyLimit({ maxSize: Math.ceil(config.maxImportBytes * 1.1) + 4096, onError: tooLarge }))
+  app.use('/api/*', async (c, next) => (c.req.path.startsWith('/api/events') ? next() : bodyLimit({ maxSize: 256 * 1024, onError: tooLarge })(c, next)))
   app.use('/api/*', authenticate(db))
   app.use('/api/*', csrf(config))
 
@@ -737,7 +745,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   app.get('/api/audit-log', requireRole('admin'), async (c) => {
     const u = currentUser(c)
-    const rows = await db.query('SELECT id, user_id, action, target, detail, request_id, created_at FROM audit_log WHERE organization_id = $1 ORDER BY id DESC LIMIT 200', [u.organization_id])
+    const rows = await db.query('SELECT a.id, a.user_id, u.display_name AS user_name, u.email AS user_email, a.action, a.target, a.detail, a.request_id, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.user_id AND u.organization_id = a.organization_id WHERE a.organization_id = $1 ORDER BY a.id DESC LIMIT 200', [u.organization_id])
     return c.json({ entries: rows })
   })
 
@@ -804,7 +812,12 @@ const MIME: Record<string, string> = {
 function serveStatic(app: Hono<Env>, dist: string) {
   const root = normalize(dist + sep)
   app.get('*', (c) => {
-    const rel = decodeURIComponent(new URL(c.req.url).pathname)
+    let rel: string
+    try {
+      rel = decodeURIComponent(new URL(c.req.url).pathname)
+    } catch {
+      return c.text('Bad request', 400)
+    }
     const target = normalize(join(root, rel))
     const inside = target.startsWith(root)
     const file = inside && existsSync(target) && statSync(target).isFile() ? target : join(root, 'index.html')

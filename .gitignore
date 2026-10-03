@@ -11,3 +11,5 @@ playwright-report/
 !.env.example
 *.tsbuildinfo
 .DS_Store
+.playwright-mcp/
+.claude/

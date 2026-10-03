@@ -1,0 +1,166 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · typecheck · unit + integration tests · build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit, integration, security and adversarial tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: CLI smoke test
+        run: |
+          node apps/cli/src/main.ts analyze scenarios/acme-demo.json
+          node apps/cli/src/main.ts analyze scenarios/01-valid-single-agent.json --fail-on low
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+          retention-days: 7
+
+  postgres:
+    name: integration tests against PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: regent
+          POSTGRES_USER: regent
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U regent -d regent" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://regent:ci-only-password@127.0.0.1:5432/regent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Migrations apply cleanly
+        run: npm run db:migrate
+      - name: API boots against PostgreSQL and passes a smoke test
+        run: |
+          node apps/api/src/index.ts &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/api/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8787/api/health | grep '"database_engine":"postgres"'
+          node scripts/smoke.ts http://127.0.0.1:8787
+
+  e2e:
+    name: end-to-end (Playwright)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+  dependency-audit:
+    name: dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: npm audit (production dependencies, high and above)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Lockfile integrity
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+  container:
+    name: container build · SBOM · scan
+    runs-on: ubuntu-24.04
+    needs: verify
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: regent:ci
+      - name: Container health check
+        run: |
+          docker run -d --name regent -p 8787:8787 -e REGENT_DATA_DIR=/tmp/pglite -e REGENT_COOKIE_SECURE=false regent:ci
+          for i in $(seq 1 40); do curl -fsS http://127.0.0.1:8787/api/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8787/api/health
+          docker rm -f regent
+      - name: SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: regent:ci
+          format: spdx-json
+          output-file: regent-sbom.spdx.json
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: regent:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy.sarif
+      - if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: regent-sbom.spdx.json
+
+  secrets:
+    name: secret scanning
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,193 @@
+/* Library CSS is unlayered and would beat @layer rules, so it is imported first
+   and REGENT's overrides for it live outside layers too (see .rf-* below). */
+@import '@xyflow/react/dist/base.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ tokens */
+/* RGB channels, so Tailwind can compose alpha: bg-copper/15. */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: 13 13 12;      /* #0D0D0C obsidian */
+  --s1: 21 21 20;          /* #151514 graphite */
+  --s2: 28 27 25;          /* #1C1B19 */
+  --s3: 36 35 33;          /* #242321 */
+  --s4: 47 45 42;
+  --ink: 233 228 216;      /* #E9E4D8 ivory, 15.9:1 on canvas */
+  --ink-2: 183 170 145;    /* #B7AA91 parchment, 8.9:1 */
+  --ink-3: 138 130 116;    /* 5.0:1 — smallest text that must be read */
+  --ink-4: 96 91 82;       /* decoration and disabled only */
+  --line: 233 228 216;     /* used at /7 */
+  --line-strong: 233 228 216; /* used at /14 */
+  --copper: 196 122 68;    /* #C47A44 authority */
+  --copper-ink: 222 152 101;
+  --crimson: 169 61 52;    /* violation fill */
+  --crimson-ink: 226 112 98;  /* violation text, 5.6:1 */
+  --sage: 123 139 114;     /* #7B8B72 verified fill */
+  --sage-ink: 158 178 145; /* verified text, 8.1:1 */
+  --amber: 196 146 60;
+  --amber-ink: 222 177 96;
+  --fog: 112 107 98;
+  --fog-ink: 160 154 143;
+  --grid: 233 228 216;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  /* Warm paper: not an inversion. Surfaces step darker, ink stays brown-black. */
+  --canvas: 239 234 223;   /* #EFEADF */
+  --s1: 247 244 237;
+  --s2: 251 249 244;
+  --s3: 232 226 213;
+  --s4: 220 212 196;
+  --ink: 28 27 25;
+  --ink-2: 74 69 60;
+  --ink-3: 104 97 86;      /* 5.3:1 on canvas */
+  --ink-4: 160 151 136;
+  --line: 28 27 25;
+  --line-strong: 28 27 25;
+  --copper: 169 87 63;     /* #A9573F */
+  --copper-ink: 150 72 48;
+  --crimson: 155 44 36;
+  --crimson-ink: 140 34 28;
+  --sage: 79 97 69;
+  --sage-ink: 63 82 54;
+  --amber: 142 100 16;
+  --amber-ink: 120 82 8;
+  --fog: 128 121 109;
+  --fog-ink: 98 92 82;
+  --grid: 28 27 25;
+}
+
+@layer base {
+  html {
+    background: rgb(var(--canvas));
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas font-sans text-[13.5px] leading-[1.55] text-ink;
+    font-feature-settings: 'ss02', 'tnum' 0;
+  }
+  ::selection {
+    background: rgb(var(--copper) / 0.35);
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--copper-ink));
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  h1, h2, h3 {
+    @apply text-ink;
+  }
+  code, kbd, samp {
+    @apply font-mono;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink) / 0.14) transparent;
+  }
+}
+
+@layer components {
+  .hairline { border-color: rgb(var(--line) / 0.08); }
+  .hairline-strong { border-color: rgb(var(--line-strong) / 0.15); }
+  .panel {
+    @apply rounded-md border bg-s1;
+    border-color: rgb(var(--line) / 0.08);
+  }
+  .panel-raised {
+    @apply rounded-md border bg-s2 shadow-lift;
+    border-color: rgb(var(--line-strong) / 0.12);
+  }
+  .eyebrow {
+    @apply font-mono text-2xs uppercase tracking-[0.14em] text-ink-3;
+  }
+  .page-title {
+    @apply font-display text-[34px] leading-[1.05] tracking-[-0.01em] text-ink;
+  }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .id {
+    @apply font-mono text-[12px] text-ink-2;
+    overflow-wrap: anywhere;
+  }
+  .scope-chip {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] border px-1.5 py-[1px] font-mono text-[11.5px] leading-[18px];
+  }
+  .dotgrid {
+    background-image: radial-gradient(rgb(var(--grid) / 0.07) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .hatch-crimson {
+    background-image: repeating-linear-gradient(-45deg, rgb(var(--crimson) / 0.55) 0 2px, transparent 2px 6px);
+  }
+}
+
+/* -------------------------------------------------------------- motion */
+/* Keyframes are declared here, not in tailwind.config: classes used only from
+   hand-written CSS are not guaranteed to have their keyframes emitted. */
+@keyframes rg-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rg-dash {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes rg-flow {
+  to { stroke-dashoffset: -0.14; }
+}
+@keyframes rg-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(var(--crimson) / 0.55); }
+  100% { box-shadow: 0 0 0 10px rgb(var(--crimson) / 0); }
+}
+@keyframes rg-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@keyframes rg-blink {
+  50% { opacity: 0.35; }
+}
+.anim-fade-up { animation: rg-fade-up 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-pulse-crimson { animation: rg-pulse-ring 1.6s ease-out infinite; }
+.anim-blink { animation: rg-blink 1.2s steps(2) infinite; }
+.anim-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--copper) / 0.22), transparent);
+  animation: rg-scan 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+html[data-motion='reduced'] *, html[data-motion='reduced'] *::before, html[data-motion='reduced'] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+}
+
+/* ------------------------------------------------------- React Flow skin */
+/* Unlayered and specific on purpose: must beat @xyflow's base.css. */
+.rf-regent .react-flow__node { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.rf-regent .react-flow__edge-path { stroke-linecap: round; }
+.rf-regent .react-flow__handle { opacity: 0; width: 6px; height: 6px; min-width: 0; min-height: 0; border: 0; pointer-events: none; }
+.rf-regent .react-flow__controls { box-shadow: none; border: 1px solid rgb(var(--line) / 0.12); border-radius: 6px; overflow: hidden; }
+.rf-regent .react-flow__controls-button { background: rgb(var(--s2)); border-bottom: 1px solid rgb(var(--line) / 0.1); color: rgb(var(--ink-2)); fill: rgb(var(--ink-2)); width: 28px; height: 28px; }
+.rf-regent .react-flow__controls-button:hover { background: rgb(var(--s3)); }
+.rf-regent .react-flow__controls-button svg { fill: currentColor; max-width: 11px; max-height: 11px; }
+.react-flow__attribution { background: transparent !important; font-size: 9px; opacity: 0.45; }
+.react-flow__attribution a { color: rgb(var(--ink-3)) !important; }
+.rf-regent .react-flow__edge.selected .react-flow__edge-path, .rf-regent .react-flow__edge:focus .react-flow__edge-path { stroke-width: 2.6; }
+.rf-regent .react-flow__node:focus-visible, .rf-regent .react-flow__edge:focus-visible { outline: none; }
+.rf-regent .react-flow__node:focus-visible > div { outline: 2px solid rgb(var(--copper-ink)); outline-offset: 3px; }
+.rf-regent .react-flow__pane { cursor: default; }
+.rf-regent .react-flow__minimap { background: rgb(var(--s1)); border: 1px solid rgb(var(--line) / 0.1); border-radius: 6px; }

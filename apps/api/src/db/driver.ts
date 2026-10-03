@@ -16,8 +16,8 @@ export interface Db {
   readonly kind: 'pglite' | 'postgres'
 }
 
-export async function openDb(opts: { url: string | null; dataDir: string; memory: boolean }): Promise<Db> {
-  if (opts.url) return openPostgres(opts.url)
+export async function openDb(opts: { url: string | null; dataDir: string; memory: boolean; poolMax?: number }): Promise<Db> {
+  if (opts.url) return openPostgres(opts.url, opts.poolMax ?? Number(process.env['REGENT_DB_POOL_MAX'] ?? 10))
   const lite = opts.memory ? new PGlite() : new PGlite(opts.dataDir)
   await lite.waitReady
   return wrapLite(lite)
@@ -44,8 +44,8 @@ function wrapLite(lite: PGlite | Parameters<Parameters<PGlite['transaction']>[0]
   return db
 }
 
-async function openPostgres(url: string): Promise<Db> {
-  const pool = new pg.Pool({ connectionString: url, max: 10, statement_timeout: 30_000 })
+async function openPostgres(url: string, max: number): Promise<Db> {
+  const pool = new pg.Pool({ connectionString: url, max, statement_timeout: 30_000 })
   await pool.query('select 1')
   const conn = (client: pg.PoolClient): Db => ({
     kind: 'postgres',

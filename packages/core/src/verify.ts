@@ -590,7 +590,7 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
     }
 
     let credentialResult: CheckResult = 'PASS'
-    let credentialDetail = ''
+    let credentialDetail: string
     const cred = a.credential_id ? credentials.get(a.credential_id) : undefined
     if (!a.credential_id) {
       credentialResult = 'UNKNOWN'
@@ -727,7 +727,7 @@ export function verify(bundle: EvidenceBundle, options: VerifyOptions = {}): Ver
 
     // ---- approval
     let approvalResult: CheckResult = 'PASS'
-    let approvalDetail = ''
+    let approvalDetail: string
     let conditional = false
     const used = union(exercised ?? [], requested ?? [])
     if (actionPolicy) {

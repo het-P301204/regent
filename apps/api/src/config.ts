@@ -40,7 +40,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] 
     databaseUrl: env['DATABASE_URL'] || null,
     dataDir: resolve(env['REGENT_DATA_DIR'] ?? '.data/pglite'),
     memory: env['REGENT_DB'] === 'memory',
-    demoMode: (env['REGENT_DEMO_MODE'] ?? 'true') !== 'false',
+    // Password-less demo personas: on by default for local development only.
+    demoMode: (env['REGENT_DEMO_MODE'] ?? (production ? 'false' : 'true')) === 'true',
     cookieSecure: env['REGENT_COOKIE_SECURE'] ? env['REGENT_COOKIE_SECURE'] === 'true' : production,
     allowedOrigins: origins,
     maxImportBytes: Number(env['REGENT_MAX_IMPORT_BYTES'] ?? 5 * 1024 * 1024),

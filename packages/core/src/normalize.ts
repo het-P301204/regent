@@ -57,7 +57,7 @@ export interface NormalizeResult {
  * or as JSONL (one record per line). Never evaluates anything.
  */
 export function parseEvidenceText(text: string): { records: unknown[]; issues: IngestIssue[] } {
-  const trimmed = text.replace(/^﻿/, '').trim()
+  const trimmed = (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text).trim()
   if (trimmed.length === 0) return { records: [], issues: [] }
   try {
     return { records: flattenInput(JSON.parse(trimmed) as unknown), issues: [] }

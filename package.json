@@ -18,7 +18,7 @@
     "dev:web": "npm run dev -w @regent/web",
     "build": "npm run build -w @regent/web",
     "start": "node apps/api/src/index.ts --production",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -28,6 +28,7 @@
     "verify": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.5.1",
@@ -38,5 +39,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
