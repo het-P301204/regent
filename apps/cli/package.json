@@ -1,0 +1,14 @@
+{
+  "name": "@regent/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REGENT command line: analyze evidence files offline with the same engine the API uses.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "regent": "./bin/regent.js"
+  },
+  "dependencies": {
+    "@regent/core": "*"
+  }
+}
