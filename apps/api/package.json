@@ -19,7 +19,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/pdfkit": "^0.17.3",
+    "@types/pdfkit": "^0.17.7",
     "@types/pg": "^8.15.6"
   }
 }
